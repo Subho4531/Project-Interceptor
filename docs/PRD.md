@@ -4,10 +4,10 @@
 **Drone Threat Simulation Trainer — MVP**
 
 ## Version
-**MVP / Phase 1**
+**MVP / Phase 1 (Three.js WebGL Edition)**
 
 ## Product Goal
-Build a lightweight 3D desktop simulation in which a trainee observes a virtual environment, detects an incoming drone, classifies it, selects an abstract response, and receives a score based on their performance.
+Build a lightweight 3D desktop web simulation in which a trainee observes a virtual environment, detects an incoming drone, classifies it, selects an abstract response, and receives a deterministic score based on their performance.
 
 The purpose of this MVP is to validate the fundamental training loop required for the larger AI-enabled Drone & Counter-Drone Threat Simulation Trainer.
 
@@ -19,34 +19,34 @@ The MVP must demonstrate:
 # 1. Problem
 Conventional drone-threat training is difficult to repeat frequently because realistic exercises require significant resources, equipment, time, and suitable environmental conditions.
 
-A software simulator can provide repeatable training scenarios where users practise recognizing and responding to simulated aerial threats.
+A browser-accessible software simulator provides repeatable, instant training scenarios where users practise recognizing and responding to simulated aerial threats without requiring multi-gigabyte engine installs.
 
-The first development milestone is therefore not a complete AI trainer. It is a **single functional training scenario** that proves that the core simulation and assessment loop works.
+The first development milestone is a **single functional training scenario** that proves that the core simulation, telemetry, and assessment loop works reliably at 60+ FPS.
 
 ---
 
 # 2. MVP Objective
 A user should be able to:
-1. Start a training scenario.
-2. Enter a small 3D environment.
-3. Observe an aerial object appear and move through the environment.
-4. Identify that an object has been detected.
-5. Classify it.
-6. Select an abstract simulated response.
-7. Finish the scenario.
-8. Receive performance metrics and a score.
+1. Start a training scenario from a tactical briefing interface.
+2. Enter a 3D semi-industrial compound environment in free-roam FPS patrol mode.
+3. Observe an aerial threat appear along a 3D spline trajectory in high-contrast Tactical FLIR / Night-Vision thermal synthetic optics.
+4. Mark detection with microsecond precision.
+5. Classify the drone target via an expedited tactical modal (`Benign`, `Unknown`, `Potential Concern`, `Simulated Threat`).
+6. Select an SOP-aligned simulated response (`Continue Observation`, `Request Info`, `Escalate / Report`, `Initiate Simulated Response`).
+7. Complete the scenario when the drone exits or times out.
+8. Receive a deterministic performance breakdown, score (0–100), letter grade, and an interactive After-Action Review (AAR) timeline.
 
-The entire session should be recorded as timestamped events.
+The entire session is recorded as an immutable timestamped telemetry stream synchronized to the Next.js companion API.
 
 ---
 
 # 3. Target User
 
 ### Primary User
-A trainee using the simulator for drone-threat recognition and decision-making practice.
+A patrol trainee using the simulator for drone-threat recognition, visual search discipline, and decision-making practice.
 
 ### Secondary User
-An instructor or evaluator reviewing trainee performance (minimal functionality in Phase 1).
+An instructor or evaluator reviewing trainee performance, response latencies, and timeline accuracy via the AAR endpoint.
 
 ---
 
@@ -54,89 +54,78 @@ An instructor or evaluator reviewing trainee performance (minimal functionality 
 
 ```mermaid
 flowchart TD
-    Launch["Launch Application"] --> Menu["Main Menu"]
-    Menu --> Start["Start Training"]
-    Start --> Load["Load Scenario"]
-    Load --> World["Enter 3D Environment"]
-    World --> Spawn["Drone Spawns"]
-    Spawn --> Flight["Drone Moves Along Flight Path"]
-    Flight --> Observe["Trainee Observes Drone"]
-    Observe --> Detect["Trainee Marks Detection"]
-    Detect --> Classify["Trainee Classifies Object"]
-    Classify --> Respond["Trainee Selects Response"]
-    Respond --> EndScenario["Scenario Ends"]
-    EndScenario --> CalcScore["Score Calculation"]
-    CalcScore --> ResultsScreen["Results & Timeline Screen"]
+    Launch["Launch Web Application"] --> Menu["Tactical Briefing / Menu"]
+    Menu --> Start["Start Scenario"]
+    Start --> Load["Initialize 3D Simulation & Telemetry Bus"]
+    Load --> World["Enter 3D Compound (FLIR / Thermal Optics)"]
+    World --> Spawn["Drone Spawns on 3D Path"]
+    Spawn --> Flight["Drone Navigates Spline Waypoints"]
+    Flight --> Observe["Trainee Patrols & Scans Airspace"]
+    Observe --> Detect["Trainee Marks Detection (Space / Button)"]
+    Detect --> Classify["Trainee Submits Target Classification"]
+    Classify --> Respond["Trainee Selects Tactical Response"]
+    Respond --> EndScenario["Scenario Completes"]
+    EndScenario --> CalcScore["Deterministic Score Calculation"]
+    CalcScore --> ResultsScreen["Results & Interactive AAR Timeline"]
 ```
 
 ---
 
-# 5. Core Gameplay
+# 5. Core Gameplay & Environment
 
 ## 5.1 Environment
-Phase 1 requires **one polished environment**:
-* **Theme**: Rural / semi-industrial training area
-* **Visual Elements**:
-  * Terrain & access roads
-  * Small industrial / utility buildings
-  * Vegetation (trees, brush for occluding lines of sight)
-  * Perimeter fences and utility poles/structures
-  * Generic environmental props
-* **Guideline**: Photorealism is desirable but not mandatory. Functional visual clarity and clean sightlines are priority.
+* **Theme**: Rural / semi-industrial military perimeter compound.
+* **Aesthetic**: **Tactical FLIR / Night-Vision Synthetic Mode** (White-Hot Thermal, Black-Hot Thermal, and Green-Phosphor NVG modes with CRT scanlines, optic reticle, and azimuth/elevation indicators).
+* **Geometry Elements**:
+  * Paved perimeter road and compound security fence.
+  * Industrial hangars, utility structures, and observation watchtowers.
+  * Natural occluders (trees, foliage, security walls) that obstruct visual line-of-sight.
+* **Performance Target**: Consistent 60+ FPS in standard desktop WebGL browsers.
 
 ---
 
-# 6. Player Mechanics
-The trainee uses a first-person or observation-oriented camera.
+# 6. Player Mechanics (Patrol Observer)
+The trainee operates as a ground patrol observer with first-person perspective:
 
 ### Controls
-* Move forward/backward (`W` / `S`)
-* Move left/right (`A` / `D`)
-* Look around (Mouse pitch & yaw)
-* Zoom / Binocular View (`Right Mouse Button` or `Shift`)
-* Mark Detection (`Space` or primary HUD button)
-* Open Classification Interface (`Tab` / Action button)
-
-> [!NOTE]
-> No combat mechanics or complex player character physics are required for Phase 1.
+* Move: `W` (Forward), `S` (Backward), `A` (Strafe Left), `D` (Strafe Right)
+* Look around: Mouse Pitch & Yaw (Pointer Lock)
+* Optics Magnification / Binocular Zoom: `Right Mouse Button` or `Shift` (toggles 1x / 4x / 10x magnification with FOV zoom and enhanced thermal reticle)
+* Mark Detection: `Spacebar` or primary tactical HUD trigger
+* Open Classification Interface: `Tab` or HUD action button
+* Optics Shader Toggle: Cycle White-Hot / Black-Hot / Phosphor NVG modes (`V` key)
 
 ---
 
 # 7. Drone Simulation
-Phase 1 requires **one generic virtual drone entity**.
+Phase 1 features a responsive 3D drone entity:
 
 ### Capabilities
-* Configurable spawn position (coordinates / distance)
-* Configurable altitude (AGL - Above Ground Level)
-* Configurable speed (m/s or difficulty tiers: Low / Med / High)
-* Waypoint-based movement (interpolated spline or waypoint chain)
-* Automatic despawn or scenario completion upon passing final waypoint
-* Visibility notification event when entering unobstructed line-of-sight
-
-```text
-Spawn Point ──> Waypoint 1 ──> Waypoint 2 ──> Waypoint 3 ──> Exit Scenario
-```
+* Procedural quadcopter airframe with high-thermal signature motors and spinning rotors.
+* Configurable spawn position, altitude (AGL), and flight velocity ($10 - 25\text{ m/s}$).
+* 3D Catmull-Rom spline trajectory traversing occlusion waypoints across the compound.
+* Multi-point line-of-sight raycasting against the player's camera position to calculate ground-truth visibility (`DRONE_VISIBLE`).
+* Automatic scenario completion upon reaching final exit waypoint or maximum duration timeout.
 
 ---
 
 # 8. Scenario Manager
-A central `ScenarioManager` (`AScenarioManager`) controls the session lifecycle:
+A central client-side `ScenarioManager` controls state transitions and triggers the dual-mode telemetry bus:
 
 ```text
-Load Scenario ──> Initialize Environment ──> Spawn Drone ──> Start Timer 
-       ──> Monitor Events ──> Detect Completion ──> Dispatch Telemetry to Scoring
+Standby ──> Running ──> DroneSpawned ──> DroneVisible (Ground Truth)
+       ──> Detected ──> Classified ──> Responded ──> Completed ──> Scored
 ```
 
-### Scenario Configuration Schema
-Scenarios are defined in external JSON or Unreal DataAssets:
+### Scenario Definition Schema
 ```json
 {
   "scenario_id": "SCN_001",
   "name": "Perimeter Incursion Alpha",
   "environment": "rural_semi_industrial",
-  "time_of_day": "day",
-  "drone_speed": "medium",
-  "drone_path": "path_01",
+  "optic_mode": "flir_white_hot",
+  "drone_speed_mps": 18.0,
+  "drone_spawn_delay_sec": 4.0,
   "expected_classification": "simulated_threat",
   "expected_response": "initiate_simulated_response",
   "max_duration_seconds": 60.0
@@ -146,27 +135,27 @@ Scenarios are defined in external JSON or Unreal DataAssets:
 ---
 
 # 9. Detection System
-The simulator records the ground-truth timestamp when the drone enters the player's frustum without occlusion (`DRONE_VISIBLE`).
-
-* **Ground Truth Event**: `DRONE_VISIBLE` at `t = 15.4s`
-* **Player Action Event**: `PLAYER_DETECTION` at `t = 19.8s`
-* **Detection Latency**: `19.8 - 15.4 = 4.4 seconds` (scored metric)
+Ground-truth visibility is computed every frame:
+* **Frustum Check**: Drone within camera FOV and forward cone.
+* **Raycast Occlusion**: Three-point line trace (Center, Top, Bottom) unobstructed by buildings, fences, or foliage.
+* **Angular Subtense**: Resolvable angular size $\ge 0.05^\circ$.
+* First frame meeting all criteria logs `DRONE_VISIBLE`.
+* Trainee input logs `PLAYER_DETECTION`.
+* $\Delta t_{\text{detect}} = t_{\text{PLAYER\_DETECTION}} - t_{\text{DRONE\_VISIBLE}}$.
 
 ---
 
 # 10. Classification System
-Following detection, the trainee opens the classification panel and selects one category:
+Trainee selects one of four tactical classes:
 1. `Benign / Permitted`
 2. `Unknown`
 3. `Potential Concern`
 4. `Simulated Threat`
 
-Optional: Trainee specifies confidence level (e.g. slider or tiers: Low / Medium / High / 80%).
-
 ---
 
 # 11. Decision System
-The trainee selects a high-level simulated response action:
+Trainee selects an SOP-aligned action:
 1. `Continue Observation`
 2. `Request Additional Information`
 3. `Escalate / Report`
@@ -175,74 +164,44 @@ The trainee selects a high-level simulated response action:
 ---
 
 # 12. Event Telemetry & Logging
-Every action generates an immutable timestamped event stored in a local telemetry stream:
+Every action generates an immutable timestamped event recorded client-side and synced to the Next.js API:
 
-| Timestamp | Event Type | Payload |
+| Index | Event Type | Payload Attributes |
 | :--- | :--- | :--- |
-| `00:00.000` | `SCENARIO_STARTED` | `{"scenario_id": "SCN_001", "trainee_id": "TR_01"}` |
-| `00:07.400` | `DRONE_SPAWNED` | `{"spawn_point": [120, 450, 45], "speed": 18.5}` |
-| `00:15.400` | `DRONE_VISIBLE` | `{"distance_m": 340.2, "bearing_deg": 42.1}` |
-| `00:19.800` | `PLAYER_DETECTION` | `{"latency_sec": 4.40}` |
-| `00:23.300` | `CLASSIFICATION_SUBMITTED` | `{"value": "simulated_threat", "confidence": 0.85}` |
-| `00:28.700` | `RESPONSE_SELECTED` | `{"action": "initiate_simulated_response"}` |
-| `00:35.000` | `SCENARIO_COMPLETED` | `{"reason": "exit_waypoint_reached"}` |
+| 1 | `SCENARIO_STARTED` | `scenario_id`, `trainee_id`, `timestamp` |
+| 2 | `DRONE_SPAWNED` | `spawn_coordinates`, `speed_mps` |
+| 3 | `DRONE_VISIBLE` | `bearing_deg`, `distance_m`, `angular_size_deg` |
+| 4 | `PLAYER_DETECTION` | `latency_sec`, `camera_rotation` |
+| 5 | `CLASSIFICATION_SUBMITTED` | `selected_class`, `confidence` |
+| 6 | `RESPONSE_SELECTED` | `action_code`, `sop_match` |
+| 7 | `SCENARIO_COMPLETED` | `reason`, `duration_sec` |
 
 ---
 
-# 13. Scoring Engine
-Scoring is strictly **deterministic** (no non-deterministic AI in Phase 1):
-
-| Category | Weight | Evaluation Logic |
-| :--- | :--- | :--- |
-| **Detection Speed** | 30% | `max(0, 100 - (latency_sec / max_acceptable_latency) * 100)` |
-| **Classification Accuracy** | 30% | 100 points for exact match, 50 points for cautious adjacent ("Potential Concern"), 0 for missed threat |
-| **Decision Accuracy** | 30% | 100 points for expected standard operating procedure response, penalty for under- or over-escalation |
-| **Response Latency** | 10% | Latency from classification to decision selection |
+# 13. Scoring Engine (100% Deterministic)
 
 $$\text{Final Score} = 0.30 \times S_{\text{detect}} + 0.30 \times S_{\text{class}} + 0.30 \times S_{\text{decision}} + 0.10 \times S_{\text{speed}}$$
 
----
-
-# 14. Results & After-Action Screen
-* Final Score (0–100) and Grade
-* Breakdown of Detection Latency, Classification Accuracy, and Decision Response Time
-* Interactive Timeline Visualizer plotting ground-truth visibility vs trainee actions
+* **Detection Latency ($30\%$)**: Linear decay up to $10.0\text{s}$ ($100 \times \max(0, 1 - \Delta t / 10)$).
+* **Classification Accuracy ($30\%$)**: Exact match ($100$), Adjacent cautious match ($60$), Misidentification / False negative ($0$).
+* **Decision SOP Match ($30\%$)**: Expected SOP action ($100$), Sub-optimal escalation ($40$), Reckless/Inadequate ($0$).
+* **Response Latency ($10\%$)**: Decision speed from detection to response selection ($100 \times \max(0, 1 - \Delta t_{\text{resp}} / 15)$).
 
 ---
 
-# 15. Day / Night Mode
-* Single environment map supporting Day and Night lighting configurations.
-* Phase 1 changes: Directional sunlight, skylight intensity, post-process exposure, and fog density.
+# 14. Results & After-Action Review (AAR) Screen
+* Final score ($0-100$) and letter grade ($A, B, C, F$).
+* Metric cards for Detection Latency, Classification Accuracy, and SOP Compliance.
+* Interactive horizontal timeline plotting `DRONE_VISIBLE`, `PLAYER_DETECTION`, `CLASSIFICATION_SUBMITTED`, and `RESPONSE_SELECTED` with latency delta callouts.
+* JSON export and sync to Next.js `/api/sessions`.
 
 ---
 
-# 16. Randomization
-At least one randomized variable per run to prevent rote muscle memory:
-* Randomized spawn timestamp ($\pm 5$s)
-* Randomized spawn vector / waypoint altitude
-* Randomized flight velocity ($\pm 15\%$)
+# 15. Technical Architecture
+* **Frontend & UI**: React 19, TypeScript, Vite, Tailwind CSS v4, Lucide Icons.
+* **3D Graphics & Simulation**: Three.js WebGL / WebGPU via React Three Fiber (R3F) and `@react-three/drei`.
+* **Player Controller**: Free-roam First-Person Controls via `PointerLockControls` + WASD ground navigation + smooth optical zoom ($3\times$).
+* **3D Assets & Environment**: PBR GLTF/GLB models for drone and semi-industrial perimeter, textured terrain mesh, and Poly Haven HDRI skies for Day/Night lighting.
+* **Simulation Intelligence**: Headless TypeScript core (`ScenarioManager`, `DroneKinematics`, `VisibilityProbe`, `TelemetryLogger`, `ScoringEngine`) mirrored to a reactive Zustand store (`useSimulationStore`).
+* **Telemetry Persistence**: Browser IndexedDB / LocalStorage with one-click JSON telemetry export and optional Python FastAPI companion API.
 
----
-
-# 17. UI / UX Requirements
-* **Main Menu**: Start Training, Scenario Selector, Settings, Exit.
-* **HUD**: Clean tactical layout — Compass/Bearing tape, Scenario Timer, Detection Trigger button, Alert Indicator.
-* **Modal Dialogs**: Fast-accessible Classification and Decision overlays (clean tactical aesthetic).
-* **Results View**: Performance cards, metric gauges, and chronological event timeline.
-
----
-
-# 18. Technical Architecture (Coding-Agent-Friendly)
-* **Engine**: Unreal Engine 5 (UE 5.4+)
-* **Code Split**:
-  * **C++ Core**: `AScenarioManager`, `ADroneActor`, `UTrainingEventSubsystem`, `UScoringSubsystem`, `UTrainingSession`, Data Models.
-  * **Blueprints**: HUD UMG bindings, Visual FX, Camera rigging, Level Art, Lighting setup.
-
----
-
-# 19. Success Criteria
-1. 3D semi-industrial level renders smoothly at 60+ FPS on standard desktop GPUs.
-2. Drone actor reliably spawns and moves along spline waypoints.
-3. Telemetry system logs all 7 core training events with microsecond timestamps.
-4. Scoring formula calculates repeatable results matching the specification.
-5. End-of-mission screen displays accurate telemetry and breakdown.

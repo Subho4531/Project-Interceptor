@@ -1,93 +1,98 @@
-# Implementation Plan & Sprint Roadmap
+# Implementation Plan & Sprint Roadmap (Three.js WebGL Architecture)
 
 ## Project: Drone Threat Simulation Trainer — Phase 1 (MVP)
-**Methodology**: Iterative milestones with test-driven telemetry verification.
+**Stack**: React 19, TypeScript, React Three Fiber (R3F), Three.js, Vite, Tailwind CSS v4, Zustand.
 
 ---
 
-## Sprint 1: Foundations & Telemetry Subsystems
-**Goal**: Build the core data schemas, event bus, and scenario definition loader.
+## Sprint 1: Project Scaffolding & Headless Simulation Core
+**Goal**: Initialize the Vite + React + Three.js project, implement the headless TypeScript simulation core, telemetry bus, and deterministic scoring unit tests.
 
-- [ ] **Task 1.1: UE5 Project Configuration**
-  - Set up Unreal Engine 5.4 C++ project (`ProjectInterceptor`).
-  - Configure `.uproject` plugins (Json, EnhancedInput).
-  - Verify compile and headless engine startup.
-- [ ] **Task 1.2: Data Models & Types (`TrainingSessionTypes.h`)**
-  - Define `ETrainingEventType`, `ETrainingClassification`, `ETrainingResponseAction`, `EScenarioState`.
-  - Create `FTrainingEvent` and `FScenarioDefinition` structs.
-- [ ] **Task 1.3: Telemetry Event Subsystem (`UTrainingEventSubsystem`)**
-  - Implement `LogEvent` with millisecond timestamps.
-  - Implement dynamic delegate `OnTrainingEventLogged`.
-  - Implement JSON exporter for session records.
-- [ ] **Task 1.4: Unit Tests for Event Serialization**
-  - Create automated test verifying event ordering and JSON format validity.
-
----
-
-## Sprint 2: Core Simulation & Drone Dynamics
-**Goal**: Implement the autonomous drone actor and ground-truth visibility probe.
-
-- [ ] **Task 2.1: Drone Actor (`ADroneActor`)**
-  - Attach `USplineComponent` for flight trajectory pathing.
-  - Implement constant/variable velocity movement along the spline curve.
-  - Add audio component with spatialized propeller loop sound.
-- [ ] **Task 2.2: Ground-Truth Visibility Detection System**
-  - Implement raycasting line-of-sight checks against observer camera.
-  - Add angular subtense threshold check (minimum visual resolvable size).
-  - Dispatch ground-truth `DRONE_VISIBLE` event when first observed unobstructed.
-- [ ] **Task 2.3: Scenario Manager State Machine (`AScenarioManager`)**
-  - Implement state lifecycle: `Standby` → `Running` → `DroneVisible` → `Detected` → `Completed`.
-  - Handle drone spawn timing and scenario timeout triggers.
+- [ ] **Task 1.1: Web Project Initialization**
+  - Initialize Vite + React 19 + TypeScript project.
+  - Install dependencies: `three`, `@types/three`, `@react-three/fiber`, `@react-three/drei`, `zustand`, `lucide-react`, `tailwindcss`.
+  - Configure Tailwind CSS and path aliases (`@/*`).
+- [ ] **Task 1.2: Core Data Types (`src/simulation/types.ts`)**
+  - Define `TrainingEventType`, `TrainingClassification`, `TrainingResponseAction`, `ScenarioState`.
+  - Create interfaces: `TrainingEvent`, `ScenarioDefinition`, `ScoreResult`.
+- [ ] **Task 1.3: Telemetry Logger (`src/simulation/TelemetryLogger.ts`)**
+  - High-precision timestamp recording (`performance.now()`).
+  - Event listener subscription pattern for UI reactivity.
+  - JSON serialization and export methods.
+- [ ] **Task 1.4: Deterministic Scoring Engine (`src/simulation/ScoringEngine.ts`)**
+  - Implement formulas: 30% detection latency, 30% classification, 30% decision SOP, 10% response speed.
+  - Vitest test suite verifying exact score computations.
+- [ ] **Task 1.5: Zustand Store Bridge (`src/store/useSimulationStore.ts`)**
+  - Connect headless core to reactive store for HUD updates (bearing, timer, events, modal states).
 
 ---
 
-## Sprint 3: Player Observation & Tactical HUD
-**Goal**: Create first-person observation controls and the tactical heads-up display.
+## Sprint 2: 3D Viewport, Camera Rig & FPS Controls
+**Goal**: Build the 3D viewport canvas, free-roaming FPS controller with ground collision, and smooth optical binocular zoom.
 
-- [ ] **Task 3.1: Observation Pawn (`ATrainingPawn`)**
-  - Smooth camera yaw/pitch rotation.
-  - Binocular zoom / magnification toggle with post-process vignette.
-  - Bind "Mark Detection" action (`Spacebar` / Gamepad button).
-- [ ] **Task 3.2: Tactical HUD (`UTrainingHUDWidget`)**
-  - Top compass / bearing tape showing azimuth angle.
-  - Mission elapsed time counter.
-  - High-contrast Detection Button with audio click feedback.
-  - Status indicator (Scanning / Object Detected).
-
----
-
-## Sprint 4: Classification, Decision & Scoring Engine
-**Goal**: Complete the decision-making loop and deterministic scoring calculation.
-
-- [ ] **Task 4.1: Classification Modal (`UClassificationModalWidget`)**
-  - 4 categories: `Benign`, `Unknown`, `Potential Concern`, `Simulated Threat`.
-  - Confidence slider / discrete selector (50%, 75%, 100%).
-  - Logs `CLASSIFICATION_SUBMITTED` event.
-- [ ] **Task 4.2: Decision Modal (`UDecisionModalWidget`)**
-  - 4 actions: `Continue Observation`, `Request Info`, `Escalate/Report`, `Initiate Response`.
-  - Logs `RESPONSE_SELECTED` event.
-- [ ] **Task 4.3: Deterministic Scoring Subsystem (`UScoringSubsystem`)**
-  - Implement detection latency scoring (30% weight).
-  - Implement classification accuracy scoring (30% weight).
-  - Implement decision quality scoring (30% weight).
-  - Implement overall response latency scoring (10% weight).
-  - Generate final `FTrainingScoreResult`.
+- [ ] **Task 2.1: Simulation Canvas & Lighting (`SimulationCanvas.tsx`)**
+  - Setup R3F `<Canvas>` with perspective camera, tone mapping (ACESFilmic), and antialiasing.
+  - Setup directional sun, ambient light, and sky dome.
+- [ ] **Task 2.2: Free-Roam FPS Controller (`FPSController.tsx`)**
+  - Integrate Three.js `PointerLockControls` for mouse pitch/yaw.
+  - Implement WASD movement with velocity acceleration and damping.
+  - Implement downward raycaster against terrain keeping player eye level at $y = 1.75\text{m}$.
+  - Continuously update azimuth bearing ($0^\circ - 360^\circ$) in Zustand store.
+- [ ] **Task 2.3: Optical Zoom Rig (`OpticalZoomRig.tsx`)**
+  - Right-click / Shift smoothly interpolates camera FOV from $75^\circ$ down to $25^\circ$ ($3\times$ optical zoom).
+  - Activate tactical vignette and reticle crosshair magnification overlay.
 
 ---
 
-## Sprint 5: Results Screen, Environment & Day/Night Polish
-**Goal**: Deliver the end-of-mission screen, polished rural/semi-industrial level, and day/night toggling.
+## Sprint 3: Drone Flight Kinematics & Visibility Raycaster
+**Goal**: Implement the drone entity moving along a 3D CatmullRom spline and ground-truth optical visibility probe.
 
-- [ ] **Task 5.1: Results & Timeline Screen (`UResultsScreenWidget`)**
-  - Display score summary card (0-100 score + letter grade).
-  - Visual breakdown of latency and accuracy components.
-  - Interactive horizontal timeline plotting:
-    `DRONE_VISIBLE` ➔ `PLAYER_DETECTION` ➔ `CLASSIFIED` ➔ `DECISION`.
-- [ ] **Task 5.2: Rural / Semi-Industrial Environment**
-  - Build basic terrain, roads, fences, warehouse structures, and foliage sightlines.
-  - Tune drone flight path through natural occlusion geometry.
-- [ ] **Task 5.3: Day / Night Lighting Profiles**
-  - Configure directional sun, skylight, and post-process volume for Day preset.
-  - Configure moonlit / high-contrast night preset with increased detection difficulty.
-- [ ] **Task 5.4: End-to-End Verification**
-  - Complete 5 consecutive runs validating repeatable scores and JSON telemetry export.
+- [ ] **Task 3.1: Drone Entity Component (`DroneActor.tsx`)**
+  - Construct 3D spline trajectory using Three.js `CatmullRomCurve3`.
+  - Animate position and tangent orientation along the curve in `useFrame`.
+  - Add rotating quadcopter propeller meshes and spatial audio hum.
+  - Fire `DRONE_SPAWNED` and `SCENARIO_COMPLETED` events.
+- [ ] **Task 3.2: Ground-Truth Visibility Detection (`VisibilityProbe.ts`)**
+  - Frustum containment check: `frustum.containsPoint(dronePos)`.
+  - Angular subtense calculation: $\theta \ge 0.05^\circ$ thresholding.
+  - Multi-point raycasting (Center, Top, Bottom) against terrain and building colliders using Three.js `Raycaster`.
+  - Dispatch ground-truth `DRONE_VISIBLE` event on first unobstructed detection frame.
+
+---
+
+## Sprint 4: Tactical HUD & Decision Modals
+**Goal**: Create the responsive military-grade heads-up display overlay and interactive decision modals.
+
+- [ ] **Task 4.1: Tactical HUD Overlay (`TacticalHUD.tsx`)**
+  - Full-screen `pointer-events-none` container with glassmorphism widgets.
+  - Elapsed scenario mission timer at top-right.
+  - Real-time azimuth/elevation coordinate telemetry.
+- [ ] **Task 4.2: Dynamic Compass Heading Tape (`CompassTape.tsx`)**
+  - Horizontal scrolling ribbon showing $0^\circ - 360^\circ$ with cardinal markers (`N`, `E`, `S`, `W`).
+  - Smoothly tracks camera yaw rotation.
+- [ ] **Task 4.3: Reticle & Primary Detection Button (`MarkDetectionBtn.tsx`)**
+  - Central tactical crosshair with status indicator (`SCANNING` / `TARGET ACQUIRED`).
+  - Prominent detection button bound to `Spacebar`.
+  - Logs `PLAYER_DETECTION` event and calculates detection latency.
+- [ ] **Task 4.4: Classification & Decision Modals**
+  - `ClassificationModal.tsx`: 4 threat categories with confidence slider; logs `CLASSIFICATION_SUBMITTED`.
+  - `DecisionModal.tsx`: 4 SOP actions; logs `RESPONSE_SELECTED`.
+
+---
+
+## Sprint 5: PBR Environment, Day/Night Lighting & Results Screen
+**Goal**: Build the rural/semi-industrial perimeter, Day/Night lighting presets, and After-Action Review results screen.
+
+- [ ] **Task 5.1: Rural / Semi-Industrial 3D Environment**
+  - Procedural/textured ground terrain with access road.
+  - Perimeter fences, industrial warehouse buildings, and utility poles providing natural line-of-sight occlusion.
+- [ ] **Task 5.2: Day / Night Lighting Presets**
+  - Day Preset: Bright directional sunlight, clear sky dome, crisp shadows.
+  - Night Preset: Moonlit low-light atmosphere, high-contrast spotlighting, elevated detection challenge.
+- [ ] **Task 5.3: Results Screen & Interactive Timeline (`ResultsScreen.tsx`)**
+  - Mission summary card with final score ($0-100$), letter grade, and latency breakdown.
+  - Interactive horizontal chronological timeline visualizer plotting all 7 events with delta callouts.
+  - One-click "Export Telemetry JSON" download button.
+  - Scenario restart button.
+- [ ] **Task 5.4: End-to-End Test & Verification**
+  - Complete 5 full test runs in browser / Codespaces verifying 60+ FPS and telemetry accuracy.

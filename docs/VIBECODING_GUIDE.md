@@ -1,36 +1,34 @@
-# Vibecoding Playbook & Agent Guidelines
+# Vibecoding Playbook & Agent Guidelines (Three.js WebGL Architecture)
 
 ## Project: Drone Threat Simulation Trainer
-**Philosophy**: Architect in structured C++, style in Blueprints & UMG, steer via targeted Agent Prompts.
+**Philosophy**: Architect in pure TypeScript, render via React Three Fiber (R3F), style tactical HUD in Tailwind CSS, steer via targeted Agent Prompts.
 
 ---
 
-## 1. What is "Vibecoding" in Simulation & UE5?
+## 1. What is "Vibecoding" in Three.js & Simulation?
 
 Vibecoding is high-leverage development where:
 1. **You steer**: Define data contracts, high-level architecture, tactile aesthetic targets ("vibes"), and acceptance criteria.
-2. **AI Agents code**: The agent generates production-grade C++ subsystems, telemetry buses, JSON serializes, math formulas, and widget logic.
-3. **You verify**: Rapid visual and behavioral iteration in the engine.
-
-To make vibecoding succeed in Unreal Engine, you must eliminate ambiguity by enforcing **strict architectural separation**.
+2. **AI Agents code**: The agent generates production-grade TypeScript simulation classes, Three.js scene components, GLTF model loaders, Zustand stores, and Tailwind tactical HUDs.
+3. **You verify**: Instant hot-reload in any desktop browser (local Vite server or GitHub Codespaces) with zero 100GB engine installation or compilation delay.
 
 ---
 
 ## 2. The Iron Separation Rule
 
 > [!IMPORTANT]
-> **Keep all game intelligence OUT of Blueprint spaghetti graphs!**  
-> AI coding agents excel at C++, data structures, and text-based logic, but struggle to edit binary `.uasset` Blueprint node noodles without errors.
+> **Keep simulation intelligence strictly decoupled from React render loops!**  
+> Never bury flight kinematics, line-of-sight raycasts, or scoring formulas inside deeply nested React components.
 
 | System Domain | Language / Tool | Rationale |
 | :--- | :--- | :--- |
-| **State Machine, Scenario Lifecycle** | **C++** (`AScenarioManager`) | Clean enum state transitions, testable in headless tests. |
-| **Telemetry & Event Bus** | **C++** (`UTrainingEventSubsystem`) | Immutable structs, microsecond timing, JSON serialization. |
-| **Scoring Formula** | **C++** (`UScoringSubsystem`) | Pure mathematical functions, deterministic unit tests. |
-| **Data Models & Schemas** | **C++** (`USTRUCT` / JSON) | Strict types, easily extended for AI-enabled phases. |
-| **UI Aesthetics & Layout** | **UMG / Blueprints** | Fluid layout styling, responsive anchors, font styling. |
-| **Materials, Lighting, FX** | **Blueprints / Lumen** | Real-time visual feedback, Day/Night lighting parameters. |
-| **Camera & Binocular Zoom** | **Blueprint / Camera Component**| Smooth camera interpolation, post-process vignette. |
+| **Simulation Core & State Machine** | **Pure TypeScript** (`ScenarioManager.ts`) | Clean state transitions, 100% testable via Vitest headless tests. |
+| **Telemetry & Event Bus** | **Pure TypeScript** (`TelemetryLogger.ts`) | Immutable event records, microsecond precision, JSON serialization. |
+| **Scoring Formula** | **Pure TypeScript** (`ScoringEngine.ts`) | Deterministic mathematical functions, unit tests. |
+| **Reactive Store Bridge** | **Zustand** (`useSimulationStore.ts`) | Atomic UI updates without unnecessary re-renders of the 3D canvas. |
+| **3D Rendering & Lighting** | **React Three Fiber** (`@react-three/drei`, `three`) | Declarative 3D scene graph, PBR shaders, HDRI lighting. |
+| **Camera & Controls** | **Three.js** (`PointerLockControls`) | Free-roam FPS navigation, ground collision raycast, smooth optical zoom. |
+| **Tactical HUD & Modals** | **React 19 + Tailwind CSS** | Monospaced typography, glassmorphism, responsive compass tape & reticle. |
 
 ---
 
@@ -39,87 +37,79 @@ To make vibecoding succeed in Unreal Engine, you must eliminate ambiguity by enf
 The simulation should feel like a **modern defense tactical training console**:
 
 * **Color Palette**:
-  * Background: Deep slate / Charcoal (`#0B0F17`)
-  * Primary Accent: HUD Cyan / Tactical Green (`#00F0FF` / `#00FF88`)
-  * Threat Warning: High-vis Amber / Alert Red (`#FFB300` / `#FF2A55`)
-  * Typography: Crisp monospaced headers (`JetBrains Mono`, `Rajdhani`, or `Inter`)
+  * Background / Glass: Deep slate / Charcoal (`#080C13` with `backdrop-blur-md bg-slate-950/80`)
+  * Border Trim: `#1E293B` (Subtle 1px tactical borders)
+  * Status Nominal / Cyan: `#00F0FF` (Telemetry readouts, bearing indicators)
+  * Active Radar / Emerald: `#00FF88` (Confirmed detection, friendly targets)
+  * Advisory / Amber: `#FFB300` (Potential concern, unknown classification)
+  * Critical Alarm / Coral: `#FF2A55` (Simulated threat, immediate escalation)
+* **Typography**:
+  * Headers & Numeric Tapes: Monospaced uppercase with letter-spacing (`JetBrains Mono`, `Rajdhani`, or `Inter`)
+  * Data labels: 10-12pt muted slate (`#64748B`), values: 14-18pt bright cyan or amber.
 * **HUD Layout**:
-  * Clean, unobtrusive perimeter elements.
-  * Heading / Compass tape at the top center.
+  * Dynamic compass heading tape at the top center.
   * Elapsed mission timer at top-right.
-  * Single, high-contrast **MARK DETECTION** button or keyboard binding (`Spacebar`).
-  * Minimalist crosshair / reticle with angular coordinate readouts.
+  * Primary **MARK DETECTION** button or keyboard binding (`Spacebar`).
+  * Minimalist crosshair / reticle with angular coordinate readouts and zoom vignette.
 * **Audio Feedback**:
-  * Subtle low-frequency drone propeller hum (3D spatialized with distance attenuation).
+  * Positional drone propeller hum via Three.js `PositionalAudio` or Web Audio API.
   * Tactile mechanical click on detection mark.
-  * Crisp radio/scanner chime when modal opens.
+  * Tactical alert chimes on classification and decision modals.
 
 ---
 
 ## 4. Agent Prompts Library (Copy-Paste Prompts)
 
-Use these targeted prompts to have coding agents generate each component with zero friction:
-
-### Prompt 1: Telemetry Event Subsystem
+### Prompt 1: Headless Simulation Core & Telemetry
 ```markdown
-Context: UE 5.4 C++ Drone Threat Simulation Trainer.
-Task: Create UTrainingEventSubsystem as a UGameInstanceSubsystem.
+Context: Three.js Drone Threat Simulation Trainer in TypeScript.
+Task: Create the headless simulation core: types.ts, TelemetryLogger.ts, and ScoringEngine.ts.
 Requirements:
-1. Define ETrainingEventType enum (SCENARIO_STARTED, DRONE_SPAWNED, DRONE_VISIBLE, PLAYER_DETECTION, CLASSIFICATION_SUBMITTED, RESPONSE_SELECTED, SCENARIO_COMPLETED).
-2. Create FTrainingEvent struct with EventId (FGuid), SessionId (FGuid), ScenarioId (FString), Timestamp (double), EventType, and DataPayload (FString JSON).
-3. Provide LogEvent(), GetSessionEvents(), and ExportSessionToJson() functions.
-4. Broadcast OnTrainingEventLogged dynamic multicast delegate for UI bindings.
-5. Provide thread-safety and zero allocations on hot paths.
+1. Define TrainingEvent interface with eventId, sessionId, scenarioId, timestamp, eventType, and data.
+2. Implement TelemetryLogger supporting the 7 core events, microsecond timing, and JSON export.
+3. Implement ScoringEngine calculating 30% detection latency, 30% classification, 30% decision SOP, and 10% response speed.
+4. Export pure TypeScript functions with zero React or DOM dependencies.
 ```
 
-### Prompt 2: Drone Entity with Spline Movement
+### Prompt 2: Drone Entity with CatmullRomCurve3 Spline
 ```markdown
-Context: UE 5.4 C++ ADroneActor for aerial target observation.
-Task: Implement ADroneActor moving along a USplineComponent.
+Context: React Three Fiber (R3F) Drone Component.
+Task: Implement DroneActor.tsx moving along a 3D spline trajectory.
 Requirements:
-1. Expose configurable SpeedMps, FlightSpline, and AltitudeOffset to Blueprint.
-2. Tick moves drone along spline based on DeltaTime * SpeedMps.
-3. Broadcast OnDroneReachedWaypoint and OnDroneCompletedFlightPath delegates.
-4. Implement a line-of-sight raycast helper CanBeSeenFrom(FVector ObserverPos) returning bool based on collision trace ignoring itself.
+1. Accept waypoints (Vector3[]), speedMps, and onComplete callback.
+2. Animate drone position and orientation along CatmullRomCurve3 in useFrame(state, delta).
+3. Add spinning quadcopter rotor meshes and position audio emitter.
+4. Expose drone world position ref for visibility raycasting.
 ```
 
-### Prompt 3: Deterministic Scoring Engine
+### Prompt 3: Free-Roam FPS Controller with PointerLockControls
 ```markdown
-Context: UE 5.4 UScoringSubsystem.
-Task: Implement pure deterministic scoring calculation matching PRD specs.
-Formula:
-- Detection Score (30%): Max(0, 100 - (Latency / MaxLatency) * 100).
-- Classification Score (30%): 100 for exact match, 50 for adjacent caution, 0 for miss.
-- Decision Score (30%): 100 for SOP match, scaled penalties for under/over escalation.
-- Response Latency Score (10%): Evaluated from detection to final action.
-Provide unit-testable C++ methods: EvaluateSession(const TArray<FTrainingEvent>& Events, const FScenarioDefinition& ScenarioDef) -> FTrainingScoreResult.
+Context: React Three Fiber FPS Controls.
+Task: Implement FPSController.tsx with ground collision and optical zoom.
+Requirements:
+1. Integrate PointerLockControls for mouse pitch/yaw look.
+2. Support WASD keyboard navigation with velocity acceleration and ground raycasting.
+3. Implement smooth optical zoom (Right Click / Shift) interpolating camera FOV between 75° and 25°.
+4. Sync camera bearing (azimuth degrees 0-360) and pitch to Zustand store.
 ```
 
-### Prompt 4: Scenario Manager State Machine
+### Prompt 4: Tactical HUD & Compass Tape
 ```markdown
-Context: UE 5.4 AScenarioManager actor.
-Task: Implement the training scenario state machine and lifecycle coordinator.
-States: Unloaded -> Initializing -> Standby -> Running -> DroneVisible -> Detected -> Classified -> Responded -> Completed.
-Expose BlueprintNativeEvents for UI transitions while keeping all timing and event dispatch in C++.
+Context: React 19 + Tailwind CSS Tactical HUD.
+Task: Create TacticalHUD.tsx, CompassTape.tsx, and ReticleOverlay.tsx.
+Requirements:
+1. CompassTape renders a 360-degree horizontal tape with cardinal directions (N, E, S, W) centered on current camera azimuth.
+2. ReticleOverlay renders a minimalist tactical crosshair with elevation/azimuth coordinates and binocular zoom vignette.
+3. MarkDetectionBtn triggers DETECTION event with audio click feedback and visual status change.
 ```
 
 ---
 
-## 5. Rapid Prototyping & Free Asset Sourcing
-
-For the rural/semi-industrial environment:
-* **Terrain & Textures**: Poly Haven (CC0 4K ground textures), ambientCG.
-* **Industrial Structures & Props**: Fab (Megascans / Unreal Marketplace free industrial kit).
-* **Quadcopter Drone Model**: Free CC0 drone models on Sketchfab or standard primitive drone scaffold.
-* **Audio**: Free tactical UI sound packs from Soniss GDC Archive or Freesound.
-
----
-
-## 6. Coding Agent Quality Checklist
+## 5. Coding Agent Quality Checklist
 
 Before committing code written by an agent, verify:
-- [ ] **No Hardcoded Paths**: Content paths use `TEXT("/Game/...")` references or DataAsset soft pointers.
-- [ ] **Pure Types in Headers**: Minimal includes in `.h`, forward declare classes (`class USplineComponent;`).
-- [ ] **Deterministic Floating Point**: Avoid frame-rate dependent math; multiply by `DeltaTime`.
-- [ ] **JSON Safety**: All JSON parsers handle malformed fields gracefully with fallback defaults.
-- [ ] **Event Telemetry Verified**: All 7 lifecycle events trigger in chronological sequence.
+- [ ] **Zero DOM in Simulation Core**: `src/simulation/` contains only pure TypeScript and Three.js math classes.
+- [ ] **Frame-Rate Independent Math**: All movement and physics multiply by `delta` seconds in `useFrame`.
+- [ ] **Clean Asset Preloading**: GLTF models and HDRI textures use `@react-three/drei`'s `useGLTF.preload` and `useEnvironment`.
+- [ ] **Responsive Full-Viewport Layout**: HUD uses `pointer-events-none` container with `pointer-events-auto` on interactive buttons.
+- [ ] **Telemetry Integrity**: All 7 lifecycle events trigger chronologically in the console and export cleanly to JSON.

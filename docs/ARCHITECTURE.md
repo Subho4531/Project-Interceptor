@@ -1,9 +1,10 @@
-# Technical Architecture & Systems Specification
+# Technical Architecture & Systems Specification (Three.js WebGL Architecture)
 
-## Project: Drone Threat Simulation Trainer (Project Interceptor)
-**Target Engine**: Unreal Engine 5 (UE 5.4+)  
-**Primary Language**: C++ (Core Systems & Logic) + UMG / Blueprints (Presentation & UI)  
-**Architecture Pattern**: Subsystem-Driven Component Architecture with Immutable Event Bus
+## Project: Drone Threat Simulation Trainer
+**Target Platform**: Modern Desktop Web Browsers (Chrome, Edge, Firefox, Safari) via WebGL / WebGPU  
+**Primary Language & Framework**: TypeScript, React 19, React Three Fiber (R3F), Three.js, Vite  
+**Styling & UI**: Tailwind CSS v4, Lucide Icons, Canvas 2D / SVG  
+**State & Telemetry**: Zustand Reactive Store + Headless TypeScript Simulation Engine  
 
 ---
 
@@ -11,220 +12,200 @@
 
 ```mermaid
 graph TD
-    subgraph Unreal Engine 5 Runtime
-        GI[GameInstance] --> TES[UTrainingEventSubsystem<br/><i>Telemetry Bus</i>]
-        GI --> SS[UScoringSubsystem<br/><i>Scoring Engine</i>]
+    subgraph Browser Client (React Three Fiber + DOM)
+        App[App Root] --> Viewport[3D Canvas Viewport<br/><i>React Three Fiber</i>]
+        App --> HUD[Tactical HUD Layer<br/><i>Tailwind DOM Overlay</i>]
         
-        World[UWorld Level] --> SM[AScenarioManager<br/><i>State Machine</i>]
-        World --> Drone[ADroneActor<br/><i>Spline Path & Visibility</i>]
-        World --> Player[ATrainingPawn<br/><i>Camera & Optics</i>]
-        World --> PC[ATrainingPlayerController]
+        Viewport --> Scene[Scene Graph]
+        Scene --> Env[Environment & Lighting<br/><i>PBR Terrain, Buildings, HDRI Sky</i>]
+        Scene --> Player[FPS Camera Controller<br/><i>PointerLockControls + Collision</i>]
+        Scene --> Drone[Drone Entity<br/><i>GLTF Mesh + 3D CatmullRom Spline</i>]
+        Scene --> VisProbe[Visibility Raycaster<br/><i>Three.js Raycaster + Frustum</i>]
         
-        PC --> UI[UTrainingHUDWidget<br/><i>Tactical UMG Interface</i>]
+        HUD --> Compass[Compass / Bearing Tape]
+        HUD --> Reticle[Dynamic Crosshair Reticle]
+        HUD --> Modals[Classification & Decision Modals]
+        HUD --> Results[Results & Timeline Card]
         
-        SM -.->|Spawns & Directs| Drone
-        SM -.->|Controls State| Player
-        SM -->|Dispatches Events| TES
+        Store[Zustand Store: useSimulationStore] <--> App
+        Store <--> HUD
+        Store <--> Viewport
         
-        Player -->|Mark Detection| SM
-        UI -->|Submit Classification / Decision| SM
-        
-        SM -->|OnScenarioComplete| SS
-        TES -->|Feed Event Stream| SS
-        SS -->|Output Score & Breakdown| ResultsUI[UResultsWidget]
+        Engine[Headless TypeScript Simulation Core] <--> Store
+        Engine --> ScenarioMgr[ScenarioManager]
+        Engine --> TelemetryBus[TelemetryLogger]
+        Engine --> ScoringEngine[ScoringEngine]
+    end
+    
+    subgraph Persistence & Optional Backend
+        TelemetryBus --> LocalStorage[IndexedDB / LocalStorage]
+        TelemetryBus -.->|Export| JSONDownload[Timestamped JSON File]
+        TelemetryBus -.->|Optional Push| CompanionAPI[Python FastAPI Companion Server]
     end
 ```
 
 ---
 
-## 2. Core Subsystems & C++ Class Hierarchy
-
-### 2.1 Subsystem Split (Engine & GameInstance Lifetime)
+## 2. Directory & Module Structure
 
 ```text
-Source/ProjectInterceptor/
-├── Public/
-│   ├── Subsystems/
-│   │   ├── TrainingEventSubsystem.h     # Immutable event telemetry bus
-│   │   └── ScoringSubsystem.h           # Deterministic evaluation engine
-│   ├── Core/
-│   │   ├── ScenarioManager.h            # Main scenario orchestrator & state machine
-│   │   ├── ScenarioDefinition.h         # USTRUCT / UDataAsset scenario schemas
-│   │   └── TrainingSessionTypes.h       # Enums, Event types, Result structures
-│   ├── Actors/
-│   │   ├── DroneActor.h                 # Drone entity with spline movement & visibility probe
-│   │   └── TrainingPawn.h               # Observation camera, zoom optics, frustum check
-│   └── UI/
-│       ├── TrainingHUDWidget.h          # Minimalist tactical HUD
-│       ├── ClassificationModalWidget.h  # Classification & confidence picker
-│       ├── DecisionModalWidget.h        # Tactical response action selector
-│       └── ResultsScreenWidget.h        # Scorecard & event timeline visualizer
-└── Private/
-    ├── Subsystems/
-    ├── Core/
-    ├── Actors/
-    └── UI/
+src/
+├── simulation/                  # Headless TypeScript Simulation Core (No React/DOM dependencies)
+│   ├── types.ts                 # Enums, Event types, Scenario definition schemas
+│   ├── ScenarioManager.ts       # State machine, timers, scenario lifecycle
+│   ├── DroneKinematics.ts       # 3D CatmullRomCurve3 spline pathing & speed interpolation
+│   ├── VisibilityProbe.ts       # Three.js Raycaster occlusion + camera frustum + angular subtense
+│   ├── TelemetryLogger.ts       # Immutable event log bus, microsecond timing, JSON serialization
+│   └── ScoringEngine.ts         # Deterministic scoring formula and evaluation matrix
+├── store/
+│   └── useSimulationStore.ts    # Reactive Zustand bridge connecting Core to UI & 3D scene
+├── components/
+│   ├── 3d/                      # React Three Fiber Scene Components
+│   │   ├── SimulationCanvas.tsx # Canvas wrapper, camera rig, tone mapping
+│   │   ├── FPSController.tsx    # PointerLockControls, WASD navigation, ground raycast
+│   │   ├── DroneActor.tsx       # GLTF drone model, rotor rotation, audio positional emitter
+│   │   ├── Environment3D.tsx    # PBR terrain, buildings, fences, Day/Night HDRI lighting
+│   │   └── OpticalZoomRig.tsx   # Smooth FOV transition for binocular zoom mode
+│   └── ui/                      # Tactical HUD & DOM Overlays (Tailwind CSS)
+│       ├── TacticalHUD.tsx       # Root HUD coordinator (pointer-events-none layer)
+│       ├── CompassTape.tsx      # Dynamic 360-degree heading azimuth tape
+│       ├── ReticleOverlay.tsx   # Crosshair with pitch/yaw readouts and zoom vignette
+│       ├── MarkDetectionBtn.tsx # High-contrast primary detection button (Spacebar)
+│       ├── ClassificationModal.tsx # Benign / Unknown / Concern / Threat picker
+│       ├── DecisionModal.tsx    # SOP Action selector
+│       └── ResultsScreen.tsx    # Scorecard & interactive horizontal event timeline
+└── assets/
+    ├── models/                  # GLTF/GLB models (drone.glb, facility.glb)
+    ├── hdri/                    # Poly Haven HDRIs (day.hdr, night.hdr)
+    └── audio/                   # Tactical clicks, drone propeller hum, alerts
 ```
 
 ---
 
-## 3. Class Specifications
+## 3. Headless Simulation Engine Components
 
-### 3.1 `UTrainingEventSubsystem` (`UGameInstanceSubsystem`)
-* **Role**: Thread-safe, centralized telemetry logger and broadcaster.
-* **Responsibilities**:
-  * Records all simulation lifecycle events with microsecond timestamps.
-  * Dispatches dynamic multicast delegates for UI reactions (`OnTrainingEventLogged`).
-  * Serializes complete session events to JSON upon scenario completion.
-* **Key Interfaces**:
-  ```cpp
-  UFUNCTION(BlueprintCallable, Category = "Telemetry")
-  void LogEvent(ETrainingEventType EventType, const FString& PayloadJson = TEXT("{}"));
-  
-  UFUNCTION(BlueprintPure, Category = "Telemetry")
-  const TArray<FTrainingEvent>& GetSessionEvents() const;
+### 3.1 `ScenarioManager.ts`
+Manages the deterministic scenario state machine:
+```mermaid
+stateDiagram-v2
+    [*] --> Standby
+    Standby --> Running : StartScenario(scenarioId)
+    Running --> DroneVisible : VisibilityProbe triggers line-of-sight
+    DroneVisible --> Detected : Trainee presses Mark Detection
+    Detected --> Classifying : Classification modal opens
+    Classifying --> Responding : Trainee submits classification
+    Responding --> Completed : Trainee submits decision OR drone exits flight path
+    Completed --> Scored : ScoringEngine evaluates telemetry
+    Scored --> [*]
+```
 
-  UFUNCTION(BlueprintCallable, Category = "Telemetry")
-  FString ExportSessionToJson() const;
-  ```
+### 3.2 `DroneKinematics.ts`
+Uses Three.js `CatmullRomCurve3` for continuous 3D spline trajectory:
+```typescript
+import * as THREE from 'three';
 
-### 3.2 `AScenarioManager` (`AActor`)
-* **Role**: Orchestrates level initialization, drone lifecycle, timing, and state transitions.
-* **State Machine**:
-  ```mermaid
-  stateDiagram-v2
-      [*] --> Unloaded
-      Unloaded --> Initializing : LoadScenario(ScenarioID)
-      Initializing --> Standby : Level & Lighting Ready
-      Standby --> Running : StartScenario()
-      Running --> DroneVisible : First Clear Line-of-Sight
-      DroneVisible --> Detected : Player Presses Mark Detection
-      Detected --> Classified : Trainee Submits Classification
-      Classified --> Responded : Trainee Submits Action Decision
-      Responded --> Completed : Exit Waypoint or Timeout
-      Completed --> Scored : Evaluate via UScoringSubsystem
-      Scored --> [*]
-  ```
+export class DroneKinematics {
+  private curve: THREE.CatmullRomCurve3;
+  private currentDistance: number = 0;
+  private totalLength: number;
+  public speedMps: number;
 
-### 3.3 `ADroneActor` (`AActor`)
-* **Role**: Aerial threat entity.
-* **Components**:
-  * `USplineComponent* FlightSpline`: Configurable 3D flight trajectory.
-  * `UStaticMeshComponent* DroneMesh`: Lightweight quadcopter / fixed-wing mesh.
-  * `UAudioComponent* RotorAudio`: Spatialized sound for audio-detection cues.
-  * `UVisibilityProbeComponent* VisibilityProbe`: Computes frustum containment and raycast line-of-sight against the trainee camera.
+  constructor(waypoints: THREE.Vector3[], speedMps: number) {
+    this.curve = new THREE.CatmullRomCurve3(waypoints, false, 'catmullrom', 0.5);
+    this.totalLength = this.curve.getLength();
+    this.speedMps = speedMps;
+  }
 
-### 3.4 `UScoringSubsystem` (`UGameInstanceSubsystem`)
-* **Role**: Deterministic scoring calculations based on the PRD specification.
-* **Formula Breakdown**:
-  $$\text{Score}_{\text{total}} = 0.30 \cdot S_{\text{detect}} + 0.30 \cdot S_{\text{class}} + 0.30 \cdot S_{\text{decision}} + 0.10 \cdot S_{\text{speed}}$$
-  
-  1. **Detection Score ($S_{\text{detect}}$)**:
-     $$S_{\text{detect}} = \max\left(0.0, 100.0 - \left(\frac{t_{\text{detected}} - t_{\text{visible}}}{\text{MaxAcceptableLatency}}\right) \times 100.0\right)$$
-  2. **Classification Score ($S_{\text{class}}$)**:
-     * Exact Match (`Simulated Threat` == `Simulated Threat`): $100$ pts
-     * Cautious Match (`Potential Concern` vs `Simulated Threat`): $50$ pts
-     * False Negative / Misidentification (`Benign` vs `Threat`): $0$ pts
-  3. **Decision Score ($S_{\text{decision}}$)**:
-     * Standard Operating Procedure match: $100$ pts
-     * Over-escalation or under-escalation: Scaled penalties ($30 - 60$ pts).
-  4. **Response Latency ($S_{\text{speed}}$)**:
-     * Calculated from detection timestamp to final decision submission.
+  public update(deltaTime: number): { position: THREE.Vector3; rotation: THREE.Euler; completed: boolean } {
+    this.currentDistance += this.speedMps * deltaTime;
+    const t = Math.min(1.0, this.currentDistance / this.totalLength);
+
+    const position = this.curve.getPointAt(t);
+    const tangent = this.curve.getTangentAt(t);
+    
+    // Calculate rotation facing tangent
+    const rotation = new THREE.Euler().setFromRotationMatrix(
+      new THREE.Matrix4().lookAt(position, position.clone().add(tangent), new THREE.Vector3(0, 1, 0))
+    );
+
+    return { position, rotation, completed: t >= 1.0 };
+  }
+}
+```
+
+### 3.3 `VisibilityProbe.ts` (Ground-Truth Observation)
+Evaluates whether the drone is objectively visible to the player:
+1. **Frustum Inclusion**: Check `frustum.containsPoint(dronePosition)` using `camera.projectionMatrix` and `camera.matrixWorldInverse`.
+2. **Angular Subtense ($\theta$)**:
+   $$\theta = \left(\frac{d}{R}\right) \cdot \left(\frac{180}{\pi}\right) \ge 0.05^\circ$$
+   Where $d$ is the physical drone diameter (0.5m) and $R$ is Euclidean distance.
+3. **Multi-Point Raycast**:
+   Cast rays to 3 target points (drone center, top rotor, bottom chassis) against scene colliders (terrain and structures).
+4. **Trigger Event**: First frame satisfying all three conditions logs `DRONE_VISIBLE`.
 
 ---
 
-## 4. Telemetry Event Schema
+## 4. Telemetry Contract & Schemas
 
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "TrainingEvent",
-  "type": "object",
-  "required": ["event_id", "session_id", "timestamp", "event_type", "scenario_id"],
-  "properties": {
-    "event_id": { "type": "string", "format": "uuid" },
-    "session_id": { "type": "string", "format": "uuid" },
-    "scenario_id": { "type": "string" },
-    "trainee_id": { "type": "string" },
-    "timestamp": { "type": "number", "description": "Elapsed seconds since scenario start" },
-    "event_type": {
-      "type": "string",
-      "enum": [
-        "SCENARIO_STARTED",
-        "DRONE_SPAWNED",
-        "DRONE_VISIBLE",
-        "PLAYER_DETECTION",
-        "CLASSIFICATION_SUBMITTED",
-        "RESPONSE_SELECTED",
-        "SCENARIO_COMPLETED"
-      ]
-    },
-    "data": {
-      "type": "object",
-      "additionalProperties": true
-    }
-  }
+### 4.1 Chronological Event Sequence
+Every scenario session generates the 7 core events:
+```text
+00:00.000 SCENARIO_STARTED        { scenario_id: "SCN_001", trainee_id: "TR_01" }
+00:05.000 DRONE_SPAWNED           { spawn_coords: [150, 40, -200], speed_mps: 18.0 }
+00:12.350 DRONE_VISIBLE           { distance_m: 245.8, angular_subtense_deg: 0.116 }
+00:16.420 PLAYER_DETECTION        { latency_sec: 4.07 }
+00:20.100 CLASSIFICATION_SUBMITTED{ classification: "simulated_threat", confidence: 0.90 }
+00:25.800 RESPONSE_SELECTED       { action: "initiate_simulated_response" }
+00:32.000 SCENARIO_COMPLETED      { reason: "flight_path_completed" }
+```
+
+### 4.2 TypeScript Event Model
+```typescript
+export interface TrainingEvent {
+  eventId: string;
+  sessionId: string;
+  scenarioId: string;
+  traineeId: string;
+  timestamp: number; // Seconds since scenario start (3 decimal places)
+  eventType: 
+    | 'SCENARIO_STARTED'
+    | 'DRONE_SPAWNED'
+    | 'DRONE_VISIBLE'
+    | 'PLAYER_DETECTION'
+    | 'CLASSIFICATION_SUBMITTED'
+    | 'RESPONSE_SELECTED'
+    | 'SCENARIO_COMPLETED';
+  data: Record<string, any>;
 }
 ```
 
 ---
 
-## 5. Scenario Definition Schema
+## 5. Scoring Engine Specification
 
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "ScenarioDefinition",
-  "type": "object",
-  "required": ["scenario_id", "environment", "time_of_day", "expected_classification", "expected_response"],
-  "properties": {
-    "scenario_id": { "type": "string" },
-    "name": { "type": "string" },
-    "description": { "type": "string" },
-    "environment": { "type": "string", "enum": ["rural_industrial", "open_terrain"] },
-    "time_of_day": { "type": "string", "enum": ["day", "night", "dusk"] },
-    "drone_speed_mps": { "type": "number", "default": 18.0 },
-    "drone_spawn_delay_sec": { "type": "number", "default": 5.0 },
-    "drone_path_id": { "type": "string" },
-    "expected_classification": {
-      "type": "string",
-      "enum": ["benign", "unknown", "potential_concern", "simulated_threat"]
-    },
-    "expected_response": {
-      "type": "string",
-      "enum": [
-        "continue_observation",
-        "request_additional_information",
-        "escalate_report",
-        "initiate_simulated_response"
-      ]
-    },
-    "max_duration_sec": { "type": "number", "default": 90.0 }
-  }
-}
-```
+Scoring is 100% deterministic and runs in client-side TypeScript:
+
+$$\text{Final Score} = 0.30 \times S_{\text{detect}} + 0.30 \times S_{\text{class}} + 0.30 \times S_{\text{decision}} + 0.10 \times S_{\text{speed}}$$
+
+* **Detection Score ($S_{\text{detect}}$)**:
+  $$S_{\text{detect}} = \max\left(0, 100 \times \left(1.0 - \frac{t_{\text{detect}} - t_{\text{visible}}}{10.0}\right)\right)$$
+* **Classification Score ($S_{\text{class}}$)**:
+  * Exact Match: 100 pts
+  * Cautious Adjacent (`Potential Concern` vs `Simulated Threat`): 60 pts
+  * Misidentification: 0 pts
+* **Decision Score ($S_{\text{decision}}$)**:
+  * SOP Alignment: 100 pts
+  * Acceptable Alternate: 60 pts
+  * Reckless / Non-compliant: 20 pts
+* **Response Speed ($S_{\text{speed}}$)**:
+  $$S_{\text{speed}} = \max\left(0, 100 \times \left(1.0 - \frac{t_{\text{response}} - t_{\text{detect}}}{15.0}\right)\right)$$
 
 ---
 
-## 6. Visibility Detection Algorithm
+## 6. Controls & Player Mechanics
 
-To ensure ground-truth accuracy without relying on player camera hacks:
-1. **Camera Frustum Check**: Compute `FSceneView::PointInView` or dot-product check of drone center against camera forward vector within camera FOV.
-2. **Multi-point Raycast**: Perform line trace from player eye position to 3 points on drone (Center, Top rotor, Bottom battery).
-3. **Distance & Angular Subtense**: Ensure drone angular size is at least $0.05^\circ$ (resolvable by human eye on a 1080p display).
-4. **Trigger Event**: First frame where raycast passes and angular subtense meets threshold logs `DRONE_VISIBLE`.
-
----
-
-## 7. Results & Timeline Architecture
-
-The results screen reads the immutable `FTrainingSessionSummary` struct:
-* **Metric Cards**:
-  * Detection Latency ($t_{\text{detect}} - t_{\text{visible}}$)
-  * Classification Match Status (`Correct`, `Partial`, `Missed`)
-  * Decision Match Status (`Optimal`, `Suboptimal`, `Incorrect`)
-  * Total Mission Elapsed Time
-  * Overall Final Score ($0 - 100$)
-* **Horizontal Timeline**:
-  * Linear time axis normalized to mission duration.
-  * Markers placed at each event timestamp with color-coded badges (Green = Expected, Yellow = Action, Red = Ground Truth Latency).
+* **Navigation**: Free-roam First-Person Controls using Three.js `PointerLockControls` + WASD.
+* **Ground Collision**: Downward raycast against terrain mesh keeping player eye level at $y = 1.75\text{m}$.
+* **Optical Zoom**: Hold `Right Mouse Button` or `Shift` to smoothly interpolate camera FOV from $75^\circ$ to $25^\circ$ ($3\times$ zoom) with a tactical vignette shader/SVG overlay.
+* **Mark Detection**: Press `Spacebar` or click primary HUD button.
+* **Action Modals**: Keyboard shortcuts (`1-4`) or mouse clicks for rapid tactical selection.

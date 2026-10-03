@@ -1,23 +1,56 @@
-# Implementation Plan & Sprint Roadmap (Three.js WebGL Architecture)
+# Implementation Plan & Multi-Phase Roadmap (SIH26247 Compliant)
 
-## Project: Drone Threat Simulation Trainer — Phase 1 (MVP)
+## Project: AI-Enabled Drone & Counter-Drone Threat Simulation Trainer (Project Interceptor)
 **Stack**: React 19, TypeScript, React Three Fiber (R3F), Three.js, Vite, Tailwind CSS v4, Zustand.
 
 ---
 
-## Sprint 1: Project Scaffolding & Headless Simulation Core
-**Goal**: Initialize the Vite + React + Three.js project, implement the headless TypeScript simulation core, telemetry bus, and deterministic scoring unit tests.
+## 🗺️ Multi-Phase Strategic Overview
+
+```
+Phase 1: MVP Core Simulation Loop (Sprints 1 – 5)  ◄ CURRENT ACTIVE SPRINT
+├── Desktop 3D WebGL in browser / Codespaces at 60+ FPS
+├── Free-roam FPS patrol observer with 3x optical binocular zoom
+├── Rural / semi-industrial compound with natural occlusion geometry
+├── Day / Night environmental lighting presets
+├── Single-drone Catmull-Rom 3D spline trajectory
+├── Microsecond ground-truth visibility probe (raycasting + angular subtense)
+├── 4-tier threat classification & SOP engagement decision modals
+├── Deterministic decision-tree scoring engine (100% mathematical)
+└── Results screen with interactive horizontal AAR event timeline
+
+Phase 2: Tactical Swarms, Sensors & Trainee Profiles (Sprints 6 – 8)
+├── Multi-drone swarm formations (V-formation, trail, scattered attack vectors)
+├── Degraded sensor simulation (optical noise, thermal clutter, EMI feed jitter)
+├── Adjustable difficulty profiles (Recruit, Operator, Specialist)
+├── Trainee profile management & persistent IndexedDB session storage
+└── Cross-session comparative AAR dashboard with historical trend analytics
+
+Phase 3: AI Procedural Engine, Urban Terrain & WebXR (Sprints 9 – 11)
+├── Procedural scenario generator (algorithmic corridor synthesis)
+├── Dense Urban tactical terrain with vertical canyon challenges
+├── WebXR / VR immersive mode (@react-three/xr) for VR headsets
+├── Unit / Squad aggregated readiness reporting
+└── LLM-powered personalized after-action debrief narrative
+```
+
+---
+
+## Phase 1: MVP Sprints (Current Execution Target)
+
+### Sprint 1: Project Scaffolding & Headless Simulation Core
+**Goal**: Initialize the Vite + React + Three.js project, implement headless TypeScript simulation core, telemetry bus, and deterministic scoring unit tests.
 
 - [ ] **Task 1.1: Web Project Initialization**
   - Initialize Vite + React 19 + TypeScript project.
   - Install dependencies: `three`, `@types/three`, `@react-three/fiber`, `@react-three/drei`, `zustand`, `lucide-react`, `tailwindcss`.
   - Configure Tailwind CSS and path aliases (`@/*`).
 - [ ] **Task 1.2: Core Data Types (`src/simulation/types.ts`)**
-  - Define `TrainingEventType`, `TrainingClassification`, `TrainingResponseAction`, `ScenarioState`.
-  - Create interfaces: `TrainingEvent`, `ScenarioDefinition`, `ScoreResult`.
+  - Define `TrainingEventType`, `TrainingClassification`, `TrainingResponseAction`, `ScenarioState`, `DifficultyTier`.
+  - Create interfaces: `TrainingEvent`, `ScenarioDefinition`, `ScoreResult`, `TraineeProfile`.
 - [ ] **Task 1.3: Telemetry Logger (`src/simulation/TelemetryLogger.ts`)**
   - High-precision timestamp recording (`performance.now()`).
-  - Event listener subscription pattern for UI reactivity.
+  - Pub/sub event listener subscription pattern for UI reactivity.
   - JSON serialization and export methods.
 - [ ] **Task 1.4: Deterministic Scoring Engine (`src/simulation/ScoringEngine.ts`)**
   - Implement formulas: 30% detection latency, 30% classification, 30% decision SOP, 10% response speed.
@@ -27,7 +60,7 @@
 
 ---
 
-## Sprint 2: 3D Viewport, Camera Rig & FPS Controls
+### Sprint 2: 3D Viewport, Camera Rig & FPS Controls
 **Goal**: Build the 3D viewport canvas, free-roaming FPS controller with ground collision, and smooth optical binocular zoom.
 
 - [ ] **Task 2.1: Simulation Canvas & Lighting (`SimulationCanvas.tsx`)**
@@ -44,7 +77,7 @@
 
 ---
 
-## Sprint 3: Drone Flight Kinematics & Visibility Raycaster
+### Sprint 3: Drone Flight Kinematics & Visibility Raycaster
 **Goal**: Implement the drone entity moving along a 3D CatmullRom spline and ground-truth optical visibility probe.
 
 - [ ] **Task 3.1: Drone Entity Component (`DroneActor.tsx`)**
@@ -60,7 +93,7 @@
 
 ---
 
-## Sprint 4: Tactical HUD & Decision Modals
+### Sprint 4: Tactical HUD & Decision Modals
 **Goal**: Create the responsive military-grade heads-up display overlay and interactive decision modals.
 
 - [ ] **Task 4.1: Tactical HUD Overlay (`TacticalHUD.tsx`)**
@@ -80,7 +113,7 @@
 
 ---
 
-## Sprint 5: PBR Environment, Day/Night Lighting & Results Screen
+### Sprint 5: PBR Environment, Day/Night Lighting & Results Screen
 **Goal**: Build the rural/semi-industrial perimeter, Day/Night lighting presets, and After-Action Review results screen.
 
 - [ ] **Task 5.1: Rural / Semi-Industrial 3D Environment**
@@ -96,3 +129,19 @@
   - Scenario restart button.
 - [ ] **Task 5.4: End-to-End Test & Verification**
   - Complete 5 full test runs in browser / Codespaces verifying 60+ FPS and telemetry accuracy.
+
+---
+
+## Phase 2: Tactical Swarms & Profiles (Future Sprints 6 – 8)
+
+- **Sprint 6: Swarm Formations (`SwarmManager.ts`)**: Coordinated multi-drone flight along synchronized formation offsets (V-formation, Trail, Scattered).
+- **Sprint 7: Degraded Sensors & Difficulty Tiers**: Sensor noise shader, thermal clutter simulation, and Recruit / Operator / Specialist parameter modulators.
+- **Sprint 8: Trainee Profiles & AAR Dashboard**: IndexedDB session persistence, historical trend charts, and recurring error identification.
+
+---
+
+## Phase 3: AI Procedural Engine & WebXR (Future Sprints 9 – 11)
+
+- **Sprint 9: Procedural Scenario Generator**: Algorithmic flight corridor and randomized threat synthesis to permanently eliminate rote memorization.
+- **Sprint 10: Urban Tactical Terrain**: Multi-story urban environment with vertical canyons and rooftop vantage points.
+- **Sprint 11: WebXR VR Headset Mode & LLM AAR**: Stereoscopic WebXR controller support via `@react-three/xr` and AI debriefing report generator.

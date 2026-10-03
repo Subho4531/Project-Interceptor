@@ -13,10 +13,43 @@ A high-performance 3D web simulation built with **PlayCanvas Engine (WebGL2 / We
 
 ---
 
+## ⛔ Enforced Engineering & Aesthetic Guardrails
+
+All coding agents operating on this repository MUST strictly follow these rules:
+
+1. **NO Procedural 3D Objects**:
+   - Never generate procedural 3D primitives (boxes, cylinders, spheres) on the fly as standalone objects or placeholders.
+   - All 3D geometry must be imported from validated PBR assets (`.glb` / `.gltf`) specified in [`docs/ASSET_MANIFEST.md`](docs/ASSET_MANIFEST.md).
+
+2. **NO Procedural Maps — Always Import Real Environments**:
+   - Do not generate algorithmic terrain grids or random low-poly maps in code.
+   - Always import real terrain meshes, satellite PBR texture packs, and real HDR environment maps.
+
+3. **NO Arcade Status Indicators (No Saturated Green/Red Traffic Lights)**:
+   - Eliminate toyish, high-saturation bright green (`#00FF00`) and red (`#FF0000`) buttons or badges.
+   - Enforce a professional, defense-grade tactical palette:
+     * Deep tactical slate / void: `#080C13` with `backdrop-blur-md bg-slate-950/85`
+     * Subtle structural borders: `#1E293B`
+     * Subdued operational cyan: `#00E5FF` (telemetry readouts, bearing coordinates)
+     * Muted tactical amber: `#D97706` / `#F59E0B` (advisory status, scanning)
+     * Desaturated threat crimson: `#BE123C` / `#E11D48` (confirmed threat classification)
+
+4. **Professional Aerospace / Defense UI Graphics**:
+   - Monospaced technical typography (`JetBrains Mono`, `Rajdhani`, `Inter`).
+   - Clean, razor-sharp vector crosshairs, bearing tapes, and coordinate readouts.
+   - Minimal visual clutter; maximize trainee observational sightlines.
+
+5. **Brevity & Conciseness (Be Less Verbal)**:
+   - Provide crisp, technical, direct responses with zero conversational fluff.
+   - Output structured diffs, exact commands, and direct status updates.
+
+---
+
 ## 📚 Key Project Documents
 
 All agents must consult the authoritative documentation in `docs/`:
 * **[`docs/PRD.md`](docs/PRD.md)** — Complete Product Requirements Document & Feature Specs.
+* **[`docs/ASSET_MANIFEST.md`](docs/ASSET_MANIFEST.md)** — Explicit 3D models, textures, and audio manifests required to start work.
 * **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — PlayCanvas Architecture, ECS Modules, Telemetry & Scoring formulas.
 * **[`docs/VIBECODING_GUIDE.md`](docs/VIBECODING_GUIDE.md)** — Agent Prompting Guide, Tactical UI Aesthetics, and Guardrails.
 * **[`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md)** — Sprint-by-sprint task checklist and acceptance criteria.

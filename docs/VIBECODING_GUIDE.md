@@ -31,29 +31,27 @@ Vibecoding is high-leverage development where:
 
 ---
 
-## 3. Tactical Aesthetic Guidelines ("The Vibe")
+## 3. Defense-Grade Tactical Aesthetics & Asset Guardrails
 
-The simulation should feel like a **modern defense tactical training console**:
+The simulation must present a **defense-grade operational console**—never an arcade game:
 
-* **Color Palette**:
-  * Background / Glass: Deep slate / Charcoal (`#080C13` with `backdrop-blur-md bg-slate-950/80`)
-  * Border Trim: `#1E293B` (Subtle 1px tactical borders)
-  * Status Nominal / Cyan: `#00F0FF` (Telemetry readouts, bearing indicators)
-  * Active Radar / Emerald: `#00FF88` (Confirmed detection, friendly targets)
-  * Advisory / Amber: `#FFB300` (Potential concern, unknown classification)
-  * Critical Alarm / Coral: `#FF2A55` (Simulated threat, immediate escalation)
-* **Typography**:
-  * Headers & Numeric Tapes: Monospaced uppercase with letter-spacing (`JetBrains Mono`, `Rajdhani`, or `Inter`)
-  * Data labels: 10-12pt muted slate (`#64748B`), values: 14-18pt bright cyan or amber.
-* **HUD Layout**:
-  * Dynamic compass heading tape at the top center.
-  * Elapsed mission timer at top-right.
-  * Primary **MARK DETECTION** button or keyboard binding (`Spacebar`).
-  * Minimalist crosshair / reticle with angular coordinate readouts and zoom vignette.
-* **Audio Feedback**:
-  * Positional drone propeller hum via PlayCanvas `sound` component.
-  * Tactile mechanical click on detection mark.
-  * Tactical alert chimes on classification and decision modals.
+* **Strict Color Restrictions (NO Toyish Red/Green Indicators)**:
+  * Prohibit bright neon green (`#00FF00`) and emergency red (`#FF0000`) buttons/badges.
+  * **Tactical Glass**: `#080C13` at 85% opacity (`backdrop-blur-md bg-slate-950/85`).
+  * **Muted Structural Borders**: `#1E293B` (ultra-clean 1px border stroke).
+  * **Operational Telemetry**: Subdued Cyan (`#00E5FF`) for bearings and digital timers.
+  * **Advisory Status**: Desaturated Tactical Amber (`#D97706` / `#F59E0B`).
+  * **Confirmed Threat**: Deep Crimson (`#BE123C` / `#E11D48`) used sparingly with low saturation.
+* **3D Asset & Map Restrictions**:
+  * **NEVER generate procedural 3D primitives** (boxes, spheres, cylinders) as object placeholders.
+  * **NEVER generate procedural terrain grids in code**.
+  * All 3D models (drone, buildings, fences, towers) and environment maps MUST be imported from validated PBR assets specified in [`docs/ASSET_MANIFEST.md`](ASSET_MANIFEST.md).
+* **Typography & Symbology**:
+  * Technical monospaced typography (`JetBrains Mono`, `Rajdhani`, `Inter`).
+  * Clean vector crosshairs, bearing tapes, and coordinate readouts.
+  * Zero decorative visual clutter; maximize trainee observational sightlines.
+* **Verbal Restraint (Military Brevity)**:
+  * Keep all communication concise, technical, and direct. Zero conversational fluff.
 
 ---
 

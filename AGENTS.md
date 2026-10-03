@@ -6,7 +6,7 @@ This file defines the project constitution, multi-agent engineering architecture
 
 ## 🎯 Project Overview
 **Drone Threat Simulation Trainer — MVP (Phase 1)**  
-A high-performance 3D web simulation built with **Three.js, React Three Fiber (R3F), TypeScript, and Tailwind CSS**. Trainees enter a 3D environment with free-roam first-person controls, detect an incoming aerial drone, classify it, select an abstract operational response, and receive a deterministic performance score based on latency and accuracy.
+A high-performance 3D web simulation built with **PlayCanvas Engine (WebGL2 / WebGPU), TypeScript, React 19, and Tailwind CSS**. Trainees enter a photorealistic PBR tactical compound with free-roam first-person controls, detect an incoming aerial drone flying along a realistic trajectory, classify it, select an abstract operational response, and receive a deterministic performance score based on latency and accuracy.
 
 **Core Loop**:  
 `Scenario -> Observation -> Detection -> Classification -> Decision -> Scoring -> Result`
@@ -17,13 +17,13 @@ A high-performance 3D web simulation built with **Three.js, React Three Fiber (R
 
 All agents must consult the authoritative documentation in `docs/`:
 * **[`docs/PRD.md`](docs/PRD.md)** — Complete Product Requirements Document & Feature Specs.
-* **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — Three.js WebGL Architecture, Module Hierarchy, Telemetry & Scoring formulas.
+* **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — PlayCanvas Architecture, ECS Modules, Telemetry & Scoring formulas.
 * **[`docs/VIBECODING_GUIDE.md`](docs/VIBECODING_GUIDE.md)** — Agent Prompting Guide, Tactical UI Aesthetics, and Guardrails.
 * **[`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md)** — Sprint-by-sprint task checklist and acceptance criteria.
 
 ---
 
-## 🤖 Multi-Agent Team Architecture (Three.js WebGL Core)
+## 🤖 Multi-Agent Team Architecture (PlayCanvas Core)
 
 ```
                          ┌────────────────────────────────────┐
@@ -33,9 +33,9 @@ All agents must consult the authoritative documentation in `docs/`:
          ┌─────────────────────────────────┴─────────────────────────────────┐
          │                                                                   │
 ┌────────▼────────────────────────┐                       ┌──────────────────▼───────────────────┐
-│     THREE.JS ENGINEERING CORE   │                       │   TELEMETRY & QA SPECIALISTS         │
+│   PLAYCANVAS & 3D CORE TEAM     │                       │   TELEMETRY & QA SPECIALISTS         │
 ├─────────────────────────────────┤                       ├──────────────────────────────────────┤
-│ • webgl_threejs_lead            │                       │ • telemetry_scoring_lead             │
+│ • playcanvas_engine_lead        │                       │ • telemetry_scoring_lead             │
 │ • simulation_kinematics_lead    │                       │ • qa_test_engineer                   │
 │ • frontend_tactical_lead        │                       └──────────────────────────────────────┘
 └────────────────┬────────────────┘
@@ -46,8 +46,8 @@ All agents must consult the authoritative documentation in `docs/`:
 ```
 
 ### 1. Senior Engineering Roles
-* **WebGL & Three.js Lead (`webgl_threejs_lead`)**: R3F Canvas configuration, Free-roam `PointerLockControls` FPS camera, PBR shaders, HDRI lighting (Day/Night), and GLTF asset optimization.
-* **Simulation Kinematics Lead (`simulation_kinematics_lead`)**: 3D `CatmullRomCurve3` spline trajectories, drone speed profiles, and Three.js `Raycaster` + Frustum ground-truth visibility probe.
+* **PlayCanvas Engine Lead (`playcanvas_engine_lead`)**: `pc.Application` configuration, clustered forward lighting, cascaded PCF5 shadows, physical sky, PBR materials, and free-roam FPS camera script.
+* **Simulation Kinematics Lead (`simulation_kinematics_lead`)**: 3D Catmull-Rom spline flight paths, realistic banking/pitch aerodynamics, rotor spin animation, and ground-truth visibility probe (`pc.Frustum` + raycast + angular subtense).
 * **Frontend Tactical Lead (`frontend_tactical_lead`)**: Military-grade tactical HUD (Compass tape, dynamic crosshair reticle, azimuth/elevation readouts, alert indicators, classification/decision modals, results timeline).
 * **Telemetry & Scoring Lead (`telemetry_scoring_lead`)**: High-precision microsecond event stream, deterministic scoring formulas, JSON export, and browser persistence (IndexedDB).
 * **QA & Systems Test Lead (`qa_test_engineer`)**: Vitest headless simulation tests, score calculation verification, and frame-rate benchmark harnesses.
@@ -63,9 +63,9 @@ To ensure this project remains clean, modular, and maintainable by AI coding age
    * `TelemetryLogger.ts` (Event bus, microsecond timestamps, JSON export)
    * `ScoringEngine.ts` (Deterministic mathematical evaluation)
    * `DroneKinematics.ts` & `VisibilityProbe.ts` (Trajectory math and line-of-sight checks)
-   * **Rule**: Zero React or DOM imports in `src/simulation/`. 100% headless testable via Vitest.
-2. **React Three Fiber ONLY for 3D Scene Graph (`src/components/3d/`)**:
-   * Canvas setup, camera controllers, GLTF mesh instances, lights, shadows, and environment maps.
+   * **Rule**: Zero React or PlayCanvas imports in `src/simulation/`. 100% headless testable via Vitest.
+2. **PlayCanvas Engine ONLY for 3D Scene Graph & ECS (`src/playcanvas/`)**:
+   * Application bootstrap, camera controller scripts, GLB mesh instances, PBR materials, clustered lights, and shadows.
 3. **React 19 + Tailwind CSS ONLY for Tactical HUD & UI (`src/components/ui/`)**:
    * Heads-up display overlays, typography, glassmorphism containers, modals, and results scorecard.
 
@@ -88,7 +88,7 @@ Every scenario run must log the following 7 events in strict chronological order
 
 * Scoring is **100% deterministic** (no non-deterministic AI in Phase 1).
 * Weights:
-  * Detection Latency: **30%** (Linear decay up to 10.0s threshold)
+  * Detection Latency: **30%** (Linear decay up to $T_{\max}$ threshold)
   * Classification Accuracy: **30%** (100 exact, 60 adjacent caution, 0 miss)
   * Decision SOP Match: **30%** (100 SOP match, scaled penalties for under/over escalation)
   * Response Latency: **10%** (Decision speed from detection to action selection)

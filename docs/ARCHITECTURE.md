@@ -1,9 +1,10 @@
-# Technical Architecture & Systems Specification (SIH26247 Compliant)
+# Technical Architecture & Systems Specification (PlayCanvas Engine Architecture)
 
 ## Project: AI-Enabled Drone & Counter-Drone Threat Simulation Trainer (Project Interceptor)
-**Target Platform**: Desktop WebGL (Phase 1 MVP) ➔ WebXR / VR Headsets (Phase 3)  
-**Core Technologies**: Three.js, React Three Fiber (R3F), TypeScript, Vite, Tailwind CSS v4, Zustand  
-**Architecture Pattern**: Headless Pure TypeScript Simulation Engine + Reactive Store Bridge + Declarative 3D Canvas + Tactical DOM Overlay  
+**3D Engine**: PlayCanvas Engine (`playcanvas` standalone npm package, WebGL2 / WebGPU)  
+**UI & Frontend Framework**: React 19, TypeScript, Vite, Tailwind CSS v4, Lucide Icons  
+**Visual Target**: Unreal Engine-Grade Realism (PBR Materials, Clustered Forward Lighting, Cascaded Shadows, Physical Sky)  
+**Simulation Core**: Headless Pure TypeScript State Machine, Telemetry Bus & Scoring Engine  
 
 ---
 
@@ -11,17 +12,19 @@
 
 ```mermaid
 graph TD
-    subgraph Browser Client (React Three Fiber + DOM)
-        App[App Root] --> Canvas3D[3D Viewport Canvas<br/><i>React Three Fiber</i>]
+    subgraph Browser Client (PlayCanvas + React DOM)
+        App[App Root] --> CanvasContainer[PlayCanvas Viewport Canvas]
         App --> HUD[Tactical HUD Layer<br/><i>Tailwind DOM Overlay</i>]
         
-        Canvas3D --> SceneGraph[Three.js Scene Graph]
-        SceneGraph --> Lighting[Environment & Lighting<br/><i>Day/Night PBR HDRI + Sky</i>]
-        SceneGraph --> Terrain[Terrain & Obstacles<br/><i>Rural Compound / Urban</i>]
-        SceneGraph --> Player[FPS Camera Rig<br/><i>PointerLockControls + Optical Zoom</i>]
-        SceneGraph --> Threats[Threat Entity Manager<br/><i>Single Drone / SwarmManager</i>]
-        SceneGraph --> VisProbe[Visibility Raycaster<br/><i>Frustum + Subtense + Multi-Ray</i>]
-        SceneGraph -.-> WebXR[WebXR VR Controller<br/><i>@react-three/xr Phase 3</i>]
+        CanvasContainer --> PCApp[pc.Application<br/><i>PlayCanvas WebGL2/WebGPU</i>]
+        
+        subgraph PlayCanvas Scene Graph (ECS)
+            PCApp --> EnvEntity[Environment Entity<br/><i>PBR Terrain, Structures, Fences</i>]
+            PCApp --> LightEntity[Lighting & Sky<br/><i>Directional Sun, Cascaded Shadows, Physical Sky</i>]
+            PCApp --> PlayerEntity[Player Observer Entity<br/><i>Camera Component, FPS Script, Zoom Rig</i>]
+            PCApp --> DroneEntity[Drone Threat Entity<br/><i>GLB Mesh, Spline Script, Audio Component</i>]
+            PCApp --> ProbeEntity[Visibility Probe<br/><i>pc.Frustum + Raycast Occlusion</i>]
+        end
         
         HUD --> Compass[Compass / Bearing Tape]
         HUD --> Reticle[Crosshair Reticle & Optical Vignette]
@@ -29,56 +32,56 @@ graph TD
         HUD --> Modals[Classification & Decision Modals]
         HUD --> AARDash[AAR Dashboard & Timeline]
         
-        Store[Zustand Store: useSimulationStore] <--> Canvas3D
-        Store <--> HUD
+        Bridge[PlayCanvas-React Bridge<br/><i>Event Bus & Zustand Store</i>] <--> PCApp
+        Bridge <--> HUD
         
         subgraph Headless Simulation Core (Pure TypeScript)
-            Store <--> ScenarioMgr[ScenarioManager]
+            Bridge <--> ScenarioMgr[ScenarioManager]
             ScenarioMgr --> Kinematics[DroneKinematics & SwarmManager]
             ScenarioMgr --> Telemetry[TelemetryLogger]
             ScenarioMgr --> Scoring[ScoringEngine]
             ScenarioMgr --> Difficulty[DifficultyProfileEngine]
-            ScenarioMgr -.-> ProcGen[ProceduralScenarioGenerator<br/><i>Phase 3</i>]
         end
     end
     
-    subgraph Data & Telemetry Layer
+    subgraph Data & Persistence Layer
         Telemetry --> IndexedDB[(Browser IndexedDB<br/><i>Trainee Profiles & Session History</i>)]
         Telemetry -.-> ExportJSON[Raw Telemetry JSON Export]
-        Telemetry -.-> API[Python FastAPI / Node Companion API<br/><i>Unit Aggregation & AAR</i>]
-        Telemetry -.-> AI_AAR[AI / LLM Debriefing Engine<br/><i>Phase 3</i>]
+        Telemetry -.-> CompanionAPI[Python FastAPI Companion Service]
     end
 ```
 
 ---
 
-## 2. Directory & Module Hierarchy
+## 2. Directory & Module Structure
 
 ```text
 src/
-├── simulation/                      # Headless TypeScript Core (ZERO React/DOM dependencies)
-│   ├── types.ts                     # Core enums, event types, telemetry schemas
-│   ├── ScenarioManager.ts           # State machine, timers, scenario lifecycle coordinator
-│   ├── DroneKinematics.ts           # 3D CatmullRom spline interpolation & flight dynamics
-│   ├── SwarmManager.ts              # Multi-drone swarm formation coordinator (Phase 2 ready)
-│   ├── VisibilityProbe.ts           # Raycaster line-of-sight + frustum + angular subtense
-│   ├── TelemetryLogger.ts           # Microsecond event logger, pub/sub bus, JSON serialization
+├── simulation/                      # Headless TypeScript Core (ZERO DOM/Engine dependencies)
+│   ├── types.ts                     # Telemetry types, enums, scenario schemas
+│   ├── ScenarioManager.ts           # State machine, timers, lifecycle coordinator
+│   ├── DroneKinematics.ts           # 3D spline mathematical trajectory calculations
+│   ├── SwarmManager.ts              # Multi-drone swarm formation coordinator (Phase 2)
+│   ├── VisibilityProbe.ts           # Pure math: line-of-sight raycast & angular subtense
+│   ├── TelemetryLogger.ts           # Microsecond event logger, pub/sub bus, JSON export
 │   ├── ScoringEngine.ts             # Deterministic decision-tree mathematical scoring
 │   ├── DifficultyProfile.ts         # Recruit, Operator, Specialist parameter modulators
-│   ├── SensorDegradation.ts         # Sensor noise & degradation parameter pipeline (Phase 2)
-│   └── ProceduralScenarioGenerator.ts # Algorithmic corridor & threat synthesizer (Phase 3)
+│   └── SensorDegradation.ts         # Sensor noise & degradation pipeline (Phase 2)
+├── playcanvas/                      # PlayCanvas 3D Engine Systems & Scripts
+│   ├── PlayCanvasApp.ts             # Application bootstrapper, canvas setup, asset loader
+│   ├── scripts/
+│   │   ├── FPSController.ts         # Pointer lock, WASD locomotion, ground collision raycast
+│   │   ├── OpticalZoom.ts           # Smooth 3x magnification FOV interpolator
+│   │   ├── DroneFlight.ts           # Spline navigation, rotor spin animation, motor audio
+│   │   └── VisibilityProbeScript.ts # pc.Frustum check & raycast collision probe
+│   └── scene/
+│       ├── EnvironmentBuilder.ts    # Tactical compound geometry, PBR materials, collision meshes
+│       └── LightingSetup.ts         # Directional sunlight, soft cascaded shadows, physical skybox
 ├── store/
-│   ├── useSimulationStore.ts        # Reactive Zustand bridge connecting Core to UI & 3D scene
-│   └── useTraineeHistoryStore.ts    # Cross-session trainee profiles & historical trend records
+│   ├── useSimulationStore.ts        # Reactive Zustand bridge connecting PlayCanvas to HUD
+│   └── useTraineeHistoryStore.ts    # IndexedDB trainee profiles & historical trend records
 ├── components/
-│   ├── 3d/                          # React Three Fiber Scene Components
-│   │   ├── SimulationCanvas.tsx     # Canvas wrapper, ACESFilmic tone mapping, camera setup
-│   │   ├── FPSController.tsx        # PointerLockControls, WASD navigation, ground collision
-│   │   ├── DroneActor.tsx           # GLTF quadcopter mesh, spinning rotors, spatial audio
-│   │   ├── SwarmGroup.tsx           # Multi-drone synchronized render group (Phase 2)
-│   │   ├── Environment3D.tsx        # PBR terrain, buildings, fences, Day/Night HDRI lighting
-│   │   ├── OpticalZoomRig.tsx       # Smooth 3x optical magnification FOV interpolator
-│   │   └── WebXRContainer.tsx       # WebXR / VR immersive rig adapter (Phase 3)
+│   ├── PlayCanvasViewport.tsx       # Canvas wrapper component mounting PlayCanvasApp
 │   └── ui/                          # Tactical HUD & DOM Overlays (Tailwind CSS)
 │       ├── TacticalHUD.tsx          # Full-screen pointer-events-none HUD coordinator
 │       ├── CompassTape.tsx          # Dynamic 360-degree heading azimuth tape
@@ -87,219 +90,192 @@ src/
 │       ├── ClassificationModal.tsx  # 4-category threat classification selector
 │       ├── DecisionModal.tsx        # SOP engagement decision selector
 │       ├── ResultsScreen.tsx        # Scorecard & interactive horizontal event timeline
-│       └── AARDashboard.tsx         # Cross-session trainee history & trend analytics (Phase 2)
+│       └── AARDashboard.tsx         # Cross-session trainee history & trend analytics
 └── assets/
     ├── models/                      # GLTF/GLB models (quadcopter.glb, compound.glb)
-    ├── hdri/                        # Poly Haven HDRIs (day.hdr, night.hdr)
-    └── audio/                       # Tactical clicks, drone propeller hum, alerts
+    ├── textures/                    # PBR maps (diffuse, normal, roughness, metallic, AO)
+    └── audio/                       # Tactical clicks, drone motor hum, alert cues
 ```
 
 ---
 
-## 3. Headless Simulation Engine Components
+## 3. PlayCanvas Core Components & Unreal-Grade Realism
 
-### 3.1 `ScenarioManager.ts` (Deterministic State Machine)
-Orchestrates scenario lifecycle and controls telemetry dispatches:
-
-```mermaid
-stateDiagram-v2
-    [*] --> Standby : LoadScenario(definition)
-    Standby --> Running : StartScenario()
-    Running --> DroneSpawned : SpawnDelay Elapsed
-    DroneSpawned --> DroneVisible : VisibilityProbe passes (Ground Truth)
-    DroneVisible --> Detected : Trainee presses Mark Detection
-    Detected --> Classifying : Classification modal opens
-    Classifying --> Responding : Trainee submits target class
-    Responding --> Completed : Trainee submits SOP action OR threat exits
-    Completed --> Scored : ScoringEngine evaluates session
-    Scored --> AAR : Save to IndexedDB & display results
-    AAR --> [*]
-```
-
-### 3.2 `DroneKinematics.ts` & `SwarmManager.ts`
-Single drones follow smooth 3D `CatmullRomCurve3` splines. The `SwarmManager` scales this to multi-drone formations:
-
+### 3.1 `PlayCanvasApp.ts` Bootstrapper
+Configures the engine for maximum photorealism:
 ```typescript
-import * as THREE from 'three';
+import * as pc from 'playcanvas';
 
-export interface SwarmDroneState {
-  id: string;
-  position: THREE.Vector3;
-  rotation: THREE.Euler;
-  isVisible: boolean;
-  offsetFromLead: THREE.Vector3;
-}
+export class SimulationPlayCanvasApp {
+  public app: pc.Application;
+  public cameraEntity: pc.Entity;
+  public droneEntity: pc.Entity;
 
-export class SwarmManager {
-  private leadTrajectory: THREE.CatmullRomCurve3;
-  private droneOffsets: THREE.Vector3[] = [];
-  public speedMps: number;
-  public currentDistance: number = 0;
-
-  constructor(leadWaypoints: THREE.Vector3[], droneCount: number, formation: 'v_formation' | 'trail' | 'scattered', speedMps: number) {
-    this.leadTrajectory = new THREE.CatmullRomCurve3(leadWaypoints, false, 'catmullrom', 0.5);
-    this.speedMps = speedMps;
-    this.setupFormation(droneCount, formation);
-  }
-
-  private setupFormation(count: number, formation: string): void {
-    this.droneOffsets = [];
-    for (let i = 0; i < count; i++) {
-      if (formation === 'v_formation') {
-        const side = i % 2 === 0 ? 1 : -1;
-        const tier = Math.floor((i + 1) / 2);
-        this.droneOffsets.push(new THREE.Vector3(side * tier * 8.0, 0, tier * -10.0));
-      } else {
-        this.droneOffsets.push(new THREE.Vector3(0, 0, i * -12.0)); // trail
+  constructor(canvas: HTMLCanvasElement) {
+    this.app = new pc.Application(canvas, {
+      mouse: new pc.Mouse(canvas),
+      keyboard: new pc.Keyboard(window),
+      touch: new pc.Touch(canvas),
+      graphicsDeviceOptions: {
+        alpha: false,
+        antialias: true,
+        powerPreference: 'high-performance',
       }
-    }
-  }
-
-  public update(deltaSec: number): { drones: SwarmDroneState[]; completed: boolean } {
-    this.currentDistance += this.speedMps * deltaSec;
-    const progress = Math.min(1.0, this.currentDistance / this.leadTrajectory.getLength());
-    const leadPos = this.leadTrajectory.getPointAt(progress);
-    const leadTangent = this.leadTrajectory.getTangentAt(progress).normalize();
-
-    const drones: SwarmDroneState[] = this.droneOffsets.map((offset, idx) => {
-      // Rotate offset to match flight direction
-      const rotatedOffset = offset.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.atan2(leadTangent.x, leadTangent.z));
-      const pos = leadPos.clone().add(rotatedOffset);
-      const rot = new THREE.Euler().setFromRotationMatrix(
-        new THREE.Matrix4().lookAt(pos, pos.clone().add(leadTangent), new THREE.Vector3(0, 1, 0))
-      );
-      return { id: `drone_${idx + 1}`, position: pos, rotation: rot, isVisible: false, offsetFromLead: offset };
     });
 
-    return { drones, completed: progress >= 1.0 };
+    this.app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
+    this.app.setCanvasResolution(pc.RESOLUTION_AUTO);
+
+    // Clustered Lighting & Tonemapping (Unreal Engine Look)
+    this.app.scene.toneMapping = pc.TONEMAP_ACES;
+    this.app.scene.exposure = 1.1;
+    this.app.scene.clusteredLightingEnabled = true;
+    this.app.scene.ambientLight = new pc.Color(0.08, 0.1, 0.14);
+
+    this.setupLighting();
+    this.setupCamera();
+  }
+
+  private setupLighting(): void {
+    const sun = new pc.Entity('SunLight');
+    sun.addComponent('light', {
+      type: 'directional',
+      color: new pc.Color(1.0, 0.98, 0.92),
+      intensity: 2.5,
+      castShadows: true,
+      shadowResolution: 2048,
+      shadowDistance: 150,
+      shadowType: pc.SHADOW_PCF5,
+    });
+    sun.setEulerAngles(45, 30, 0);
+    this.app.root.addChild(sun);
+  }
+
+  private setupCamera(): void {
+    this.cameraEntity = new pc.Entity('PlayerCamera');
+    this.cameraEntity.addComponent('camera', {
+      clearColor: new pc.Color(0.1, 0.15, 0.2),
+      fov: 75,
+      nearClip: 0.1,
+      farClip: 1000,
+    });
+    this.cameraEntity.setPosition(0, 1.75, 0);
+    this.app.root.addChild(this.cameraEntity);
+  }
+
+  public start(): void {
+    this.app.start();
   }
 }
 ```
 
-### 3.3 `VisibilityProbe.ts` (Ground-Truth Observation)
-Evaluates whether a target is objectively observable by the player:
-1. **Frustum Containment**: Verifies target center is inside the active camera view frustum.
-2. **Angular Subtense ($\theta$) Threshold**:
-   $$\theta = \left(\frac{d}{R}\right) \cdot \left(\frac{180}{\pi}\right) \ge 0.05^\circ$$
-   Where $d$ is the physical drone diameter ($0.5\text{m}$) and $R$ is range in meters.
-3. **Multi-Point Raycast**: Casts rays to 3 target points (chassis center, top rotor plane, payload) against all terrain/building colliders using Three.js `Raycaster`.
-4. **Trigger**: First frame satisfying all three checks dispatches ground-truth `DRONE_VISIBLE`.
-
----
-
-## 4. Scenario Definition & Telemetry Schemas
-
-### 4.1 Scenario Definition Schema (`ScenarioDefinition`)
+### 3.2 Free-Roam FPS Locomotion (`FPSController.ts`)
+Implements first-person movement, pointer lock mouse-look, and ground collision:
 ```typescript
-export interface ScenarioDefinition {
-  scenarioId: string;
-  name: string;
-  description: string;
-  terrain: 'rural_semi_industrial' | 'urban_tactical';
-  lighting: 'day' | 'night';
-  sensorCondition: 'nominal' | 'degraded_noise' | 'degraded_thermal_clutter';
-  threatType: 'single_drone' | 'swarm';
-  swarmCount?: number;
-  swarmFormation?: 'v_formation' | 'trail' | 'scattered';
-  difficultyTier: 'recruit' | 'operator' | 'specialist' | 'adaptive';
-  droneSpeedMps: number;
-  droneSpawnDelaySec: number;
-  expectedClassification: 'benign' | 'unknown' | 'potential_concern' | 'simulated_threat';
-  expectedResponse: 'continue_observation' | 'request_additional_information' | 'escalate_report' | 'initiate_simulated_response';
-  maxDurationSec: number;
+import * as pc from 'playcanvas';
+
+export class FPSControllerScript extends pc.ScriptType {
+  private velocity: pc.Vec3 = new pc.Vec3();
+  private yaw: number = 0;
+  private pitch: number = 0;
+
+  initialize(): void {
+    const canvas = this.app.graphicsDevice.canvas;
+    canvas.addEventListener('click', () => {
+      if (!pc.Mouse.isPointerLocked()) canvas.requestPointerLock();
+    });
+
+    this.app.mouse.on(pc.EVENT_MOUSEMOVE, this.onMouseMove, this);
+  }
+
+  private onMouseMove(e: pc.MouseEvent): void {
+    if (!pc.Mouse.isPointerLocked()) return;
+    this.yaw -= e.dx * 0.15;
+    this.pitch = Math.max(-85, Math.min(85, this.pitch - e.dy * 0.15));
+    this.entity.setEulerAngles(this.pitch, this.yaw, 0);
+  }
+
+  update(dt: number): void {
+    const moveSpeed = 12.0 * dt;
+    const forward = this.entity.forward;
+    const right = this.entity.right;
+    
+    // Flatten vectors for ground navigation
+    forward.y = 0; forward.normalize();
+    right.y = 0; right.normalize();
+
+    const dir = new pc.Vec3();
+    if (this.app.keyboard.isPressed(pc.KEY_W)) dir.add(forward);
+    if (this.app.keyboard.isPressed(pc.KEY_S)) dir.sub(forward);
+    if (this.app.keyboard.isPressed(pc.KEY_D)) dir.add(right);
+    if (this.app.keyboard.isPressed(pc.KEY_A)) dir.sub(right);
+
+    dir.normalize().scale(moveSpeed);
+    const newPos = this.entity.getPosition().clone().add(dir);
+    newPos.y = 1.75; // Eye height
+    this.entity.setPosition(newPos);
+  }
 }
 ```
 
-### 4.2 Telemetry Event Schema (`TrainingEvent`)
+### 3.3 Ground-Truth Line-of-Sight & Visibility Probe
 ```typescript
-export interface TrainingEvent {
-  eventId: string;
-  sessionId: string;
-  scenarioId: string;
-  traineeId: string;
-  timestamp: number; // Seconds since scenario start with 3 decimal places
-  eventType: 
-    | 'SCENARIO_STARTED'
-    | 'DRONE_SPAWNED'
-    | 'DRONE_VISIBLE'
-    | 'PLAYER_DETECTION'
-    | 'CLASSIFICATION_SUBMITTED'
-    | 'RESPONSE_SELECTED'
-    | 'SCENARIO_COMPLETED';
-  data: Record<string, any>;
+import * as pc from 'playcanvas';
+
+export class VisibilityProbeScript extends pc.ScriptType {
+  public cameraEntity: pc.Entity;
+  public droneEntity: pc.Entity;
+  public onDroneVisible: () => void;
+
+  update(): void {
+    if (!this.cameraEntity || !this.droneEntity) return;
+
+    const camPos = this.cameraEntity.getPosition();
+    const dronePos = this.droneEntity.getPosition();
+
+    // 1. Frustum Check
+    const cameraComponent = this.cameraEntity.camera;
+    const frustum = cameraComponent.frustum;
+    if (!frustum.containsPoint(dronePos)) return;
+
+    // 2. Angular Subtense Check
+    const distanceMeters = camPos.distance(dronePos);
+    if (distanceMeters <= 0.1) return;
+    const subtenseDeg = (0.5 / distanceMeters) * (180 / Math.PI);
+    if (subtenseDeg < 0.05) return;
+
+    // 3. Line of Sight Raycast Occlusion Check
+    const hit = this.app.systems.rigidbody.raycastFirst(camPos, dronePos);
+    if (!hit || hit.entity === this.droneEntity) {
+      this.onDroneVisible?.();
+    }
+  }
 }
 ```
 
 ---
 
-## 5. Decision-Tree Scoring Engine
+## 4. Realistic Tactical Compound Environment
 
-The scoring engine evaluates telemetry strictly through deterministic formulas:
-
-$$\text{Final Score} = 0.30 \times S_{\text{detect}} + 0.30 \times S_{\text{class}} + 0.30 \times S_{\text{decision}} + 0.10 \times S_{\text{speed}}$$
-
-* **Detection Score ($S_{\text{detect}}$)**:
-  $$S_{\text{detect}} = \max\left(0, 100 \times \left(1.0 - \frac{t_{\text{detect}} - t_{\text{visible}}}{T_{\text{max\_allowed}}}\right)\right)$$
-  *(Where $T_{\text{max\_allowed}} = 15\text{s}$ for Recruit, $10\text{s}$ for Operator, $6\text{s}$ for Specialist).*
-* **Classification Score ($S_{\text{class}}$)**:
-  * Exact SOP Match: **100 pts**
-  * Adjacent Cautious Classification: **60 pts**
-  * Unknown / Hesitant: **30 pts**
-  * Misidentification / False Negative: **0 pts**
-* **Engagement Decision Score ($S_{\text{decision}}$)**:
-  * Exact SOP Protocol: **100 pts**
-  * Sub-optimal Precautionary Action: **50 pts**
-  * Reckless / Negligent Protocol Breach: **0 - 20 pts**
-* **Response Speed ($S_{\text{speed}}$)**:
-  $$S_{\text{speed}} = \max\left(0, 100 \times \left(1.0 - \frac{t_{\text{response}} - t_{\text{detect}}}{15.0}\right)\right)$$
+* **Terrain Geometry**: High-resolution heightmap terrain mesh ($400\text{m} \times 400\text{m}$) with PBR normal, roughness, and diffuse maps (packed gravel, soil, asphalt road).
+* **Industrial Perimeter**: Concrete base buildings, metal hangars with metallic-roughness reflections, chain-link security fences, watchtowers, and utility structures.
+* **Occlusion Masking**: Carefully placed warehouse walls and foliage clusters to create realistic visual line-of-sight occlusions along the drone's incursion vector.
+* **Atmospheric Presets**:
+  * **Daytime Preset**: High sun angle, sharp shadows, clear sky.
+  * **Night Operations Preset**: Low-light moonlit environment ($0.05$ lux), perimeter sodium-vapor spotlights, requiring trainees to identify faint rotor silhouettes against the horizon.
 
 ---
 
-## 6. Trainee & Unit Tracking Architecture
+## 5. Scoring & Telemetry Contract
 
-To fulfill the requirement to "track individual and unit performance across repeated sessions":
+The simulation records the standard 7 chronological events with microsecond timestamps:
+1. `SCENARIO_STARTED`
+2. `DRONE_SPAWNED`
+3. `DRONE_VISIBLE` (Ground truth via `VisibilityProbeScript`)
+4. `PLAYER_DETECTION` (Trainee Spacebar mark)
+5. `CLASSIFICATION_SUBMITTED` (Benign / Unknown / Concern / Threat)
+6. `RESPONSE_SELECTED` (Observe / Info / Escalate / Intercept)
+7. `SCENARIO_COMPLETED`
 
-```typescript
-export interface TraineeProfile {
-  traineeId: string;
-  callsign: string;
-  unitSquadId: string;
-  totalSessionsCompleted: number;
-  averageScore: number;
-  averageDetectionLatencySec: number;
-  classificationAccuracyRate: number;
-  sopComplianceRate: number;
-  currentSkillLevel: 'recruit' | 'operator' | 'specialist';
-}
-
-export interface SessionRecord {
-  sessionId: string;
-  traineeId: string;
-  scenarioId: string;
-  completedAtUtc: string;
-  difficulty: string;
-  scoreResult: ScoreResult;
-  events: TrainingEvent[];
-}
-```
-
-* **Storage**: Browser IndexedDB stores all completed `SessionRecord` entries locally with zero server dependency.
-* **AAR Dashboard**: Computes trailing moving averages, latency trends over the last 10 sessions, and highlights recurring classification errors.
-
----
-
-## 7. WebXR / VR Headset Readiness (Phase 3)
-
-Because Three.js natively implements the W3C WebXR Device API, Project Interceptor is designed for VR readiness:
-* **Package Integration**: `@react-three/xr` provides `<VRButton />`, `<XR />`, and controller tracking controllers.
-* **Camera Rig Adapter**: `FPSController.tsx` shares camera pitch/yaw input with stereoscopic HMD orientation vectors.
-* **Spatialized Audio**: Three.js `PositionalAudio` renders spatial 3D audio cues directly into headset speakers.
-
----
-
-## 8. AI & Extensibility Hooks
-
-The immutable JSON telemetry stream provides native integration points for advanced AI in Phase 3:
-1. **LLM-Powered AAR Debriefing**: Telemetry streams are serialized into structured JSON prompts sent to local or cloud LLMs to generate personalized instructor debriefing notes (*e.g., "Trainee TR-01 showed a 3.2s hesitation when transitioning from detection to classification on high-speed night approaches"*).
-2. **Adaptive Difficulty Generator**: Historical latency curves dynamically calibrate drone velocity and path occlusions to keep trainees in optimal learning zones.
-3. **Procedural Scenario Generation**: Algorithmic threat synthesis generates unique flight corridors, swarm formations, and approach vectors from random seeds to permanently prevent rote memorization.
+Scoring is 100% deterministic:
+$$\text{Final Score} = 0.30 \cdot S_{\text{detect}} + 0.30 \cdot S_{\text{class}} + 0.30 \cdot S_{\text{decision}} + 0.10 \cdot S_{\text{speed}}$$

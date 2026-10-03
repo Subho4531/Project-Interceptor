@@ -1,21 +1,23 @@
-# Implementation Plan & Multi-Phase Roadmap (SIH26247 Compliant)
+# Implementation Plan & Multi-Phase Roadmap (PlayCanvas WebGL Architecture)
 
 ## Project: AI-Enabled Drone & Counter-Drone Threat Simulation Trainer (Project Interceptor)
-**Stack**: React 19, TypeScript, React Three Fiber (R3F), Three.js, Vite, Tailwind CSS v4, Zustand.
+**Engine & Stack**: PlayCanvas Engine (`playcanvas` standalone npm), React 19, TypeScript, Vite, Tailwind CSS v4, Zustand.
 
 ---
 
 ## 🗺️ Multi-Phase Strategic Overview
 
 ```
-Phase 1: MVP Core Simulation Loop (Sprints 1 – 5)  ◄ CURRENT ACTIVE SPRINT
-├── Desktop 3D WebGL in browser / Codespaces at 60+ FPS
-├── Free-roam FPS patrol observer with 3x optical binocular zoom
-├── Rural / semi-industrial compound with natural occlusion geometry
-├── Day / Night environmental lighting presets
-├── Single-drone Catmull-Rom 3D spline trajectory
-├── Microsecond ground-truth visibility probe (raycasting + angular subtense)
-├── 4-tier threat classification & SOP engagement decision modals
+Phase 1: PlayCanvas MVP Core Simulation Loop (Sprints 1 – 5)  ◄ CURRENT ACTIVE SPRINT
+├── PlayCanvas WebGL2/WebGPU engine running at 60+ FPS in desktop browser
+├── Unreal Engine-grade visual realism (Clustered PBR lighting, soft shadows, physical sky)
+├── Real-world tactical compound (PBR terrain, warehouse, perimeter fences, watchtowers)
+├── Day / Night atmospheric lighting presets
+├── Free-roam FPS patrol observer with 3x optical binocular zoom & ground collision
+├── Single-drone Catmull-Rom 3D spline flight with animated rotors & 3D positional audio
+├── Microsecond ground-truth visibility probe (pc.Frustum + raycasting + angular subtense)
+├── Tactical HUD overlay (Compass tape, reticle, Mark Detection Spacebar trigger)
+├── 4-tier classification & SOP engagement decision modals
 ├── Deterministic decision-tree scoring engine (100% mathematical)
 └── Results screen with interactive horizontal AAR event timeline
 
@@ -29,7 +31,7 @@ Phase 2: Tactical Swarms, Sensors & Trainee Profiles (Sprints 6 – 8)
 Phase 3: AI Procedural Engine, Urban Terrain & WebXR (Sprints 9 – 11)
 ├── Procedural scenario generator (algorithmic corridor synthesis)
 ├── Dense Urban tactical terrain with vertical canyon challenges
-├── WebXR / VR immersive mode (@react-three/xr) for VR headsets
+├── WebXR / VR immersive mode (@react-three/xr or PlayCanvas WebXR) for VR headsets
 ├── Unit / Squad aggregated readiness reporting
 └── LLM-powered personalized after-action debrief narrative
 ```
@@ -39,11 +41,11 @@ Phase 3: AI Procedural Engine, Urban Terrain & WebXR (Sprints 9 – 11)
 ## Phase 1: MVP Sprints (Current Execution Target)
 
 ### Sprint 1: Project Scaffolding & Headless Simulation Core
-**Goal**: Initialize the Vite + React + Three.js project, implement headless TypeScript simulation core, telemetry bus, and deterministic scoring unit tests.
+**Goal**: Initialize Vite + React 19 + TypeScript project with PlayCanvas Engine, implement headless TypeScript simulation core, telemetry bus, and deterministic scoring unit tests.
 
 - [ ] **Task 1.1: Web Project Initialization**
   - Initialize Vite + React 19 + TypeScript project.
-  - Install dependencies: `three`, `@types/three`, `@react-three/fiber`, `@react-three/drei`, `zustand`, `lucide-react`, `tailwindcss`.
+  - Install dependencies: `playcanvas`, `zustand`, `lucide-react`, `tailwindcss`.
   - Configure Tailwind CSS and path aliases (`@/*`).
 - [ ] **Task 1.2: Core Data Types (`src/simulation/types.ts`)**
   - Define `TrainingEventType`, `TrainingClassification`, `TrainingResponseAction`, `ScenarioState`, `DifficultyTier`.
@@ -60,35 +62,34 @@ Phase 3: AI Procedural Engine, Urban Terrain & WebXR (Sprints 9 – 11)
 
 ---
 
-### Sprint 2: 3D Viewport, Camera Rig & FPS Controls
-**Goal**: Build the 3D viewport canvas, free-roaming FPS controller with ground collision, and smooth optical binocular zoom.
+### Sprint 2: PlayCanvas Viewport, Unreal-Grade Lighting & FPS Controls
+**Goal**: Build the PlayCanvas application bootstrapper, clustered forward lighting, free-roam FPS controller with ground collision, and smooth optical zoom.
 
-- [ ] **Task 2.1: Simulation Canvas & Lighting (`SimulationCanvas.tsx`)**
-  - Setup R3F `<Canvas>` with perspective camera, tone mapping (ACESFilmic), and antialiasing.
-  - Setup directional sun, ambient light, and sky dome.
-- [ ] **Task 2.2: Free-Roam FPS Controller (`FPSController.tsx`)**
-  - Integrate Three.js `PointerLockControls` for mouse pitch/yaw.
-  - Implement WASD movement with velocity acceleration and damping.
-  - Implement downward raycaster against terrain keeping player eye level at $y = 1.75\text{m}$.
-  - Continuously update azimuth bearing ($0^\circ - 360^\circ$) in Zustand store.
-- [ ] **Task 2.3: Optical Zoom Rig (`OpticalZoomRig.tsx`)**
+- [ ] **Task 2.1: PlayCanvas Engine Bootstrapper (`PlayCanvasApp.ts`)**
+  - Instantiate `pc.Application` on canvas with antialiasing and ACES tone mapping.
+  - Setup clustered directional sunlight, cascaded PCF5 soft shadows, and ambient lighting.
+  - Mount inside React component (`PlayCanvasViewport.tsx`).
+- [ ] **Task 2.2: Free-Roam FPS Controller (`FPSController.ts`)**
+  - Pointer lock mouse pitch/yaw look.
+  - WASD locomotion with ground collision raycast against compound terrain (eye height $1.75\text{m}$).
+  - Continuously broadcast azimuth bearing ($0^\circ - 360^\circ$) to Zustand store.
+- [ ] **Task 2.3: Optical Zoom Rig (`OpticalZoom.ts`)**
   - Right-click / Shift smoothly interpolates camera FOV from $75^\circ$ down to $25^\circ$ ($3\times$ optical zoom).
-  - Activate tactical vignette and reticle crosshair magnification overlay.
+  - Sync optical magnification state to HUD reticle and vignette overlay.
 
 ---
 
-### Sprint 3: Drone Flight Kinematics & Visibility Raycaster
-**Goal**: Implement the drone entity moving along a 3D CatmullRom spline and ground-truth optical visibility probe.
+### Sprint 3: Drone Spline Flight & PlayCanvas Visibility Probe
+**Goal**: Implement the drone GLB entity with Catmull-Rom spline flight, animated rotors, 3D audio, and ground-truth visibility probe.
 
-- [ ] **Task 3.1: Drone Entity Component (`DroneActor.tsx`)**
-  - Construct 3D spline trajectory using Three.js `CatmullRomCurve3`.
-  - Animate position and tangent orientation along the curve in `useFrame`.
-  - Add rotating quadcopter propeller meshes and spatial audio hum.
+- [ ] **Task 3.1: Drone Entity Component (`DroneFlight.ts`)**
+  - Construct 3D spline trajectory using Catmull-Rom math with natural banking and pitch.
+  - Animate spinning quadcopter rotor blades and 3D positional motor sound.
   - Fire `DRONE_SPAWNED` and `SCENARIO_COMPLETED` events.
-- [ ] **Task 3.2: Ground-Truth Visibility Detection (`VisibilityProbe.ts`)**
-  - Frustum containment check: `frustum.containsPoint(dronePos)`.
+- [ ] **Task 3.2: Ground-Truth Visibility Detection (`VisibilityProbeScript.ts`)**
+  - Frustum containment check: `cameraComponent.frustum.containsPoint(dronePos)`.
   - Angular subtense calculation: $\theta \ge 0.05^\circ$ thresholding.
-  - Multi-point raycasting (Center, Top, Bottom) against terrain and building colliders using Three.js `Raycaster`.
+  - Multi-point raycasting (Center, Top, Bottom) against terrain and compound buildings using PlayCanvas raycasting.
   - Dispatch ground-truth `DRONE_VISIBLE` event on first unobstructed detection frame.
 
 ---
@@ -113,15 +114,15 @@ Phase 3: AI Procedural Engine, Urban Terrain & WebXR (Sprints 9 – 11)
 
 ---
 
-### Sprint 5: PBR Environment, Day/Night Lighting & Results Screen
-**Goal**: Build the rural/semi-industrial perimeter, Day/Night lighting presets, and After-Action Review results screen.
+### Sprint 5: Real-World PBR Compound, Day/Night Lighting & Results Screen
+**Goal**: Build the satellite-grade PBR tactical compound, Day/Night lighting presets, and After-Action Review results screen.
 
-- [ ] **Task 5.1: Rural / Semi-Industrial 3D Environment**
-  - Procedural/textured ground terrain with access road.
-  - Perimeter fences, industrial warehouse buildings, and utility poles providing natural line-of-sight occlusion.
+- [ ] **Task 5.1: Real-World Tactical Compound Environment**
+  - High-resolution terrain mesh with PBR gravel, soil, and access road textures.
+  - Perimeter fences, industrial warehouse buildings, watchtowers, and foliage occluders.
 - [ ] **Task 5.2: Day / Night Lighting Presets**
-  - Day Preset: Bright directional sunlight, clear sky dome, crisp shadows.
-  - Night Preset: Moonlit low-light atmosphere, high-contrast spotlighting, elevated detection challenge.
+  - Day Preset: Bright directional sunlight, clear physical sky, crisp cascaded shadows.
+  - Night Preset: Moonlit low-light atmosphere ($0.05\text{ lux}$), perimeter sodium-vapor spotlights, elevated detection challenge.
 - [ ] **Task 5.3: Results Screen & Interactive Timeline (`ResultsScreen.tsx`)**
   - Mission summary card with final score ($0-100$), letter grade, and latency breakdown.
   - Interactive horizontal chronological timeline visualizer plotting all 7 events with delta callouts.
@@ -144,4 +145,4 @@ Phase 3: AI Procedural Engine, Urban Terrain & WebXR (Sprints 9 – 11)
 
 - **Sprint 9: Procedural Scenario Generator**: Algorithmic flight corridor and randomized threat synthesis to permanently eliminate rote memorization.
 - **Sprint 10: Urban Tactical Terrain**: Multi-story urban environment with vertical canyons and rooftop vantage points.
-- **Sprint 11: WebXR VR Headset Mode & LLM AAR**: Stereoscopic WebXR controller support via `@react-three/xr` and AI debriefing report generator.
+- **Sprint 11: WebXR VR Headset Mode & LLM AAR**: Stereoscopic WebXR controller support via PlayCanvas WebXR and AI debriefing report generator.

@@ -1,33 +1,32 @@
-# Vibecoding Playbook & Agent Guidelines (Three.js WebGL Architecture)
+# Vibecoding Playbook & Agent Guidelines (PlayCanvas WebGL Engine)
 
 ## Project: Drone Threat Simulation Trainer
-**Philosophy**: Architect in pure TypeScript, render via React Three Fiber (R3F), style tactical HUD in Tailwind CSS, steer via targeted Agent Prompts.
+**Philosophy**: Architect in pure TypeScript, render with PlayCanvas Engine (Unreal-grade realism in browser), style tactical HUD in Tailwind CSS, steer via targeted Agent Prompts.
 
 ---
 
-## 1. What is "Vibecoding" in Three.js & Simulation?
+## 1. What is "Vibecoding" in PlayCanvas & Simulation?
 
 Vibecoding is high-leverage development where:
 1. **You steer**: Define data contracts, high-level architecture, tactile aesthetic targets ("vibes"), and acceptance criteria.
-2. **AI Agents code**: The agent generates production-grade TypeScript simulation classes, Three.js scene components, GLTF model loaders, Zustand stores, and Tailwind tactical HUDs.
-3. **You verify**: Instant hot-reload in any desktop browser (local Vite server or GitHub Codespaces) with zero 100GB engine installation or compilation delay.
+2. **AI Agents code**: The agent generates production-grade TypeScript simulation classes, PlayCanvas scene entities, GLTF model loaders, ECS scripts, Zustand stores, and Tailwind tactical HUDs.
+3. **You verify**: Instant hot-reload in any desktop browser (local Vite server or GitHub Codespaces) with Unreal-grade PBR rendering and zero engine compile delays.
 
 ---
 
 ## 2. The Iron Separation Rule
 
 > [!IMPORTANT]
-> **Keep simulation intelligence strictly decoupled from React render loops!**  
-> Never bury flight kinematics, line-of-sight raycasts, or scoring formulas inside deeply nested React components.
+> **Keep simulation intelligence strictly decoupled from engine render loops!**  
+> Never bury flight kinematics, line-of-sight raycasts, or scoring formulas inside deeply nested engine components.
 
 | System Domain | Language / Tool | Rationale |
 | :--- | :--- | :--- |
 | **Simulation Core & State Machine** | **Pure TypeScript** (`ScenarioManager.ts`) | Clean state transitions, 100% testable via Vitest headless tests. |
 | **Telemetry & Event Bus** | **Pure TypeScript** (`TelemetryLogger.ts`) | Immutable event records, microsecond precision, JSON serialization. |
 | **Scoring Formula** | **Pure TypeScript** (`ScoringEngine.ts`) | Deterministic mathematical functions, unit tests. |
-| **Reactive Store Bridge** | **Zustand** (`useSimulationStore.ts`) | Atomic UI updates without unnecessary re-renders of the 3D canvas. |
-| **3D Rendering & Lighting** | **React Three Fiber** (`@react-three/drei`, `three`) | Declarative 3D scene graph, PBR shaders, HDRI lighting. |
-| **Camera & Controls** | **Three.js** (`PointerLockControls`) | Free-roam FPS navigation, ground collision raycast, smooth optical zoom. |
+| **3D Rendering & PBR Lighting** | **PlayCanvas Engine** (`playcanvas` npm) | Clustered forward lighting, physical sky, soft cascaded shadows, GLB models. |
+| **Camera & Controls** | **PlayCanvas Scripts** (`FPSController.ts`) | Free-roam FPS navigation, ground collision raycast, smooth optical zoom. |
 | **Tactical HUD & Modals** | **React 19 + Tailwind CSS** | Monospaced typography, glassmorphism, responsive compass tape & reticle. |
 
 ---
@@ -52,17 +51,17 @@ The simulation should feel like a **modern defense tactical training console**:
   * Primary **MARK DETECTION** button or keyboard binding (`Spacebar`).
   * Minimalist crosshair / reticle with angular coordinate readouts and zoom vignette.
 * **Audio Feedback**:
-  * Positional drone propeller hum via Three.js `PositionalAudio` or Web Audio API.
+  * Positional drone propeller hum via PlayCanvas `sound` component.
   * Tactile mechanical click on detection mark.
   * Tactical alert chimes on classification and decision modals.
 
 ---
 
-## 4. Agent Prompts Library (Copy-Paste Prompts)
+## 4. PlayCanvas Agent Prompts Library (Copy-Paste Prompts)
 
 ### Prompt 1: Headless Simulation Core & Telemetry
 ```markdown
-Context: Three.js Drone Threat Simulation Trainer in TypeScript.
+Context: PlayCanvas Drone Threat Simulation Trainer in TypeScript.
 Task: Create the headless simulation core: types.ts, TelemetryLogger.ts, and ScoringEngine.ts.
 Requirements:
 1. Define TrainingEvent interface with eventId, sessionId, scenarioId, timestamp, eventType, and data.
@@ -71,36 +70,37 @@ Requirements:
 4. Export pure TypeScript functions with zero React or DOM dependencies.
 ```
 
-### Prompt 2: Drone Entity with CatmullRomCurve3 Spline
+### Prompt 2: PlayCanvas Application Setup & Clustered PBR Lighting
 ```markdown
-Context: React Three Fiber (R3F) Drone Component.
-Task: Implement DroneActor.tsx moving along a 3D spline trajectory.
+Context: PlayCanvas standalone in Vite + TypeScript.
+Task: Implement PlayCanvasApp.ts with Unreal Engine-grade visual fidelity.
 Requirements:
-1. Accept waypoints (Vector3[]), speedMps, and onComplete callback.
-2. Animate drone position and orientation along CatmullRomCurve3 in useFrame(state, delta).
-3. Add spinning quadcopter rotor meshes and position audio emitter.
-4. Expose drone world position ref for visibility raycasting.
+1. Instantiate pc.Application on canvas with antialiasing and ACES tone mapping.
+2. Setup directional sun with clustered lighting and 2048 cascaded soft shadows.
+3. Configure ambient lighting and prefiltered environment reflections.
+4. Export start(), destroy(), and scene entity attachment hooks.
 ```
 
-### Prompt 3: Free-Roam FPS Controller with PointerLockControls
+### Prompt 3: Free-Roam FPS Controller Script
 ```markdown
-Context: React Three Fiber FPS Controls.
-Task: Implement FPSController.tsx with ground collision and optical zoom.
+Context: PlayCanvas FPS Camera Script.
+Task: Implement FPSController.ts with ground collision and optical zoom.
 Requirements:
-1. Integrate PointerLockControls for mouse pitch/yaw look.
-2. Support WASD keyboard navigation with velocity acceleration and ground raycasting.
-3. Implement smooth optical zoom (Right Click / Shift) interpolating camera FOV between 75° and 25°.
-4. Sync camera bearing (azimuth degrees 0-360) and pitch to Zustand store.
+1. PointerLockControls for mouse pitch/yaw look.
+2. WASD locomotion with ground collision raycast against terrain mesh.
+3. Smooth 3x optical binocular zoom interpolating camera FOV between 75° and 25°.
+4. Broadcast azimuth bearing degrees (0-360) and pitch for HUD sync.
 ```
 
-### Prompt 4: Tactical HUD & Compass Tape
+### Prompt 4: Drone Spline Flight & Visibility Probe Script
 ```markdown
-Context: React 19 + Tailwind CSS Tactical HUD.
-Task: Create TacticalHUD.tsx, CompassTape.tsx, and ReticleOverlay.tsx.
+Context: PlayCanvas Drone Entity & Optics Probe.
+Task: Implement DroneFlight.ts and VisibilityProbeScript.ts.
 Requirements:
-1. CompassTape renders a 360-degree horizontal tape with cardinal directions (N, E, S, W) centered on current camera azimuth.
-2. ReticleOverlay renders a minimalist tactical crosshair with elevation/azimuth coordinates and binocular zoom vignette.
-3. MarkDetectionBtn triggers DETECTION event with audio click feedback and visual status change.
+1. Move drone GLB model along Catmull-Rom 3D waypoint curve with banking rotation.
+2. Animate quadcopter rotors and emit 3D positional motor audio.
+3. In VisibilityProbeScript, perform pc.Frustum check, angular subtense (>= 0.05°), and raycast occlusion check against compound colliders.
+4. Trigger onDroneVisible callback upon first unobstructed line-of-sight.
 ```
 
 ---
@@ -108,8 +108,8 @@ Requirements:
 ## 5. Coding Agent Quality Checklist
 
 Before committing code written by an agent, verify:
-- [ ] **Zero DOM in Simulation Core**: `src/simulation/` contains only pure TypeScript and Three.js math classes.
-- [ ] **Frame-Rate Independent Math**: All movement and physics multiply by `delta` seconds in `useFrame`.
-- [ ] **Clean Asset Preloading**: GLTF models and HDRI textures use `@react-three/drei`'s `useGLTF.preload` and `useEnvironment`.
+- [ ] **Zero DOM in Simulation Core**: `src/simulation/` contains only pure TypeScript classes.
+- [ ] **Frame-Rate Independent Math**: All movement and physics multiply by `dt` seconds in `update(dt)`.
+- [ ] **Clean Asset Preloading**: GLB models and textures load via PlayCanvas asset loader.
 - [ ] **Responsive Full-Viewport Layout**: HUD uses `pointer-events-none` container with `pointer-events-auto` on interactive buttons.
-- [ ] **Telemetry Integrity**: All 7 lifecycle events trigger chronologically in the console and export cleanly to JSON.
+- [ ] **Telemetry Integrity**: All 7 lifecycle events trigger chronologically and export cleanly to JSON.

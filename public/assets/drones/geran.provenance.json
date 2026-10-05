@@ -1,0 +1,41 @@
+{
+  "uid": "8f12f601efe44a73b47e30a7077cf249",
+  "sourceUrl": "https://sketchfab.com/3d-models/geranium-2-8f12f601efe44a73b47e30a7077cf249",
+  "author": {
+    "name": "Karosio",
+    "profile": "https://sketchfab.com/Karosio"
+  },
+  "license": {
+    "uri": "https://api.sketchfab.com/v3/licenses/2628dbe5140a4e9592126c8df566c0b7",
+    "label": "CC Attribution-NonCommercial-ShareAlike",
+    "fullName": "CC Attribution-NonCommercial-ShareAlike",
+    "requirements": "Author must be credited. No commercial use. Modified versions must have the same license.",
+    "url": "http://creativecommons.org/licenses/by-nc-sa/4.0/",
+    "slug": "by-nc-sa"
+  },
+  "sourceBounds": {
+    "min": [
+      -1.2480687816127656,
+      -0.23868149063856337,
+      -1.4972210810952682
+    ],
+    "max": [
+      1.2480687816127656,
+      0.2550544971944997,
+      1.9985302251905839
+    ]
+  },
+  "normalizationScale": 1.0015473653501203,
+  "dimensions": {
+    "x": 2.5,
+    "y": 0.49449997779274335,
+    "z": 3.5011605107298367
+  },
+  "transformations": [
+    "dedup",
+    "weld",
+    "prune",
+    "centre and authored metre-space scale"
+  ],
+  "outputBytes": 2030792
+}

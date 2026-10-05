@@ -1,0 +1,80 @@
+import { chromium } from 'playwright';
+import { mkdir, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import assert from 'node:assert/strict';
+const directory = new URL('../artifacts/qa/', import.meta.url);
+await mkdir(directory, { recursive: true });
+const report = { date: new Date().toISOString(), hardware: { cpu: os.cpus()[0]?.model, cores: os.cpus().length, memoryGB: Math.round(os.totalmem() / 2 ** 30) }, tests: [] };
+for (const channel of ['chrome', 'msedge']) {
+  const browser = await chromium.launch({ channel, headless: true });
+  for (const [width, height] of [[1280, 720], [1920, 1080]]) {
+    const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+    const errors = [], requests = [];
+    page.on('pageerror', e => errors.push(String(e)));
+    page.on('requestfailed', r => errors.push(`Request failed: ${r.url()} ${r.failure()?.errorText}`));
+    page.on('response', r => { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
+    page.on('request', r => requests.push(r.url()));
+    const name = `${channel}-${width}x${height}`;
+    await page.goto('http://127.0.0.1:4173/?qa=1');
+    await page.waitForFunction(() => window.__trainerQA?.snapshot().ready, undefined, { timeout: 60000 });
+    await page.waitForTimeout(1500);
+    await page.screenshot({ path: new URL(`${name}-entry.png`, directory).pathname.replace(/^\/(\w:)/, '$1') });
+    const snap = () => page.evaluate(() => window.__trainerQA.snapshot());
+    const run = fn => page.evaluate(fn);
+    await page.getByRole('button', { name: 'Enter observation post' }).click();
+    await page.waitForTimeout(500);
+    let status = await snap();
+    assert.equal(status.status, 'running', 'Enter must start the actual session'); assert.equal(status.locked, true, 'Pointer lock must engage');
+    const origin = status.camera;
+    await page.keyboard.down('KeyW'); await page.waitForTimeout(650); await page.keyboard.up('KeyW');
+    status = await snap(); assert.ok(Math.hypot(status.camera.x - origin.x, status.camera.z - origin.z) > .5, 'WASD moves observer');
+    await page.keyboard.press('KeyZ'); await page.keyboard.press('KeyE');
+    assert.ok((await snap()).events.some(e => e.type === 'observation'));
+    await page.keyboard.press('KeyZ');
+    const fps = [];
+    for (let i = 0; i < 5; i++) { await page.waitForTimeout(700); fps.push((await snap()).fps); }
+    await page.screenshot({ path: new URL(`${name}-day.png`, directory).pathname.replace(/^\/(\w:)/, '$1') });
+    await page.keyboard.press('Escape'); await page.waitForTimeout(200); assert.equal((await snap()).status, 'paused');
+    const pausedTime = (await snap()).time; await page.waitForTimeout(400); assert.equal((await snap()).time, pausedTime);
+    await page.getByRole('button', { name: 'Environment settings' }).click();
+    await page.getByLabel('Lighting', { exact: true }).selectOption('night');
+    await page.getByLabel('Visibility', { exact: true }).selectOption('reduced');
+    assert.deepEqual((await snap()).conditions, { timeOfDay: 'night', visibility: 'reduced' });
+    await page.getByRole('button', { name: 'Back to observation' }).click();
+    await page.getByRole('button', { name: 'Resume observation' }).click(); await page.waitForTimeout(500);
+    await page.screenshot({ path: new URL(`${name}-night.png`, directory).pathname.replace(/^\/(\w:)/, '$1') });
+    await run(() => window.__trainerQA.pause());
+    const baseline = await snap();
+    for (let i = 0; i < 25; i++) await run(() => { window.__trainerQA.reset(); window.__trainerQA.start(); });
+    const afterResets = await snap();
+    assert.equal(afterResets.meshes, baseline.meshes); assert.equal(afterResets.materials, baseline.materials); assert.equal(afterResets.textures, baseline.textures);
+    assert.equal(afterResets.entityCount, 0); assert.equal(afterResets.visualCount, 0);
+    await run(() => { window.__trainerQA.reset(); window.__trainerQA.move(100, 0); });
+    assert.ok((await snap()).camera.x < 39.5, 'Fence collision prevents passing through');
+    await run(() => window.__trainerQA.reset());
+    // An explicit visibility event exercises the tab lifecycle without faking simulation time.
+    const hidden = await run(() => { window.__trainerQA.start(); Object.defineProperty(document, 'hidden', { configurable: true, value: true }); document.dispatchEvent(new Event('visibilitychange')); return window.__trainerQA.snapshot(); });
+    assert.equal(hidden.status, 'paused'); await page.waitForTimeout(250); assert.equal((await snap()).time, hidden.time);
+    await run(() => { Object.defineProperty(document, 'hidden', { configurable: true, value: false }); document.dispatchEvent(new Event('visibilitychange')); });
+    assert.equal((await snap()).status, 'paused');
+    assert.ok(requests.every(url => url.startsWith('http://127.0.0.1:4173/') || url.startsWith('data:') || url.startsWith('blob:')), 'Assets must be local');
+    assert.deepEqual(errors, [], 'No browser errors');
+    report.tests.push({ channel, width, height, browserVersion: browser.version(), webgl: status.webgl, renderer: status.renderer, fpsSamples: fps, averageFPS: fps.reduce((a, b) => a + b) / fps.length, beforeResets: { meshes: baseline.meshes, materials: baseline.materials, textures: baseline.textures }, afterResets: { meshes: afterResets.meshes, materials: afterResets.materials, textures: afterResets.textures }, aerialReady: status.aerialReady, errors, checks: ['entry', 'pointer lock', 'WASD', 'zoom', 'observation', 'pause and resume', 'night and reduced visibility', '25 resets resource stability', 'fence collision', 'hidden-tab pause', 'local assets only'] });
+    console.log(`${name}: PASS; average ${report.tests.at(-1).averageFPS.toFixed(1)} FPS; ${status.renderer}`);
+    await writeFile(new URL('report.json', directory), JSON.stringify(report, null, 2)); await page.close();
+  }
+  await browser.close();
+}
+// Missing assets and an unsupported renderer each provide an actionable UI state.
+const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const unsupported = await browser.newPage();
+await unsupported.addInitScript(() => { const original = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function(type, ...args) { return type === 'webgl2' ? null : original.call(this, type, ...args); }; });
+await unsupported.goto('http://127.0.0.1:4173/'); await unsupported.getByRole('button', { name: 'Reload environment' }).waitFor();
+assert.ok(await unsupported.getByText('WebGL2 is unavailable', { exact: false }).isVisible());
+const missing = await browser.newPage(); await missing.route('**/assets/environment/ground.jpg', route => route.fulfill({ status: 404, body: 'missing' }));
+await missing.goto('http://127.0.0.1:4173/?qa=1'); await missing.waitForFunction(() => window.__trainerQA?.snapshot().ready, undefined, { timeout: 60000 });
+assert.ok(await missing.getByText('Asset loading issues', { exact: false }).isVisible());
+report.errorStates = ['unsupported WebGL2', 'missing texture notice with usable scene'];
+await writeFile(new URL('report.json', directory), JSON.stringify(report, null, 2));
+await browser.close();
+await import('./check-quality.mjs');

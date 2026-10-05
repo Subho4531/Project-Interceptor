@@ -1,0 +1,306 @@
+[
+  {
+    "name": "fpv",
+    "triangles": 58840,
+    "uid": "0294037f390a4351926c11caf3e5c43e",
+    "sourceUrl": "https://sketchfab.com/3d-models/fpv-drone-0294037f390a4351926c11caf3e5c43e",
+    "author": {
+      "name": "Jeyhun1985",
+      "profile": "https://sketchfab.com/Jeyhun1985"
+    },
+    "license": {
+      "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+      "label": "CC Attribution",
+      "fullName": "Creative Commons Attribution",
+      "requirements": "Author must be credited. Commercial use is allowed.",
+      "url": "http://creativecommons.org/licenses/by/4.0/",
+      "slug": "by"
+    },
+    "sourceBounds": {
+      "min": [
+        -0.23812800645828247,
+        -0.1536400020122528,
+        -0.2979699969291687
+      ],
+      "max": [
+        0.23812800645828247,
+        0.13781000673770907,
+        0.2574099898338318
+      ]
+    },
+    "normalizationScale": 1.0078612909483433,
+    "dimensions": {
+      "x": 0.48,
+      "y": 0.2937411820656425,
+      "z": 0.5597459904258315
+    },
+    "transformations": [
+      "dedup",
+      "weld",
+      "prune",
+      "centre and authored metre-space scale"
+    ],
+    "outputBytes": 7995380
+  },
+  {
+    "name": "orlan",
+    "triangles": 37636,
+    "uid": "e2efb223c1814b7291818a9a7b4e80c5",
+    "sourceUrl": "https://sketchfab.com/3d-models/orlan-10-e2efb223c1814b7291818a9a7b4e80c5",
+    "author": {
+      "name": "𝙁𝙇𝙄𝙂𝙃𝙏𝘾𝙇𝙐𝘽",
+      "profile": "https://sketchfab.com/flightclubua"
+    },
+    "license": {
+      "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+      "label": "CC Attribution",
+      "fullName": "Creative Commons Attribution",
+      "requirements": "Author must be credited. Commercial use is allowed.",
+      "url": "http://creativecommons.org/licenses/by/4.0/",
+      "slug": "by"
+    },
+    "sourceBounds": {
+      "min": [
+        -0.9478520154953003,
+        -0.13497799634933477,
+        -0.5621770024299622
+      ],
+      "max": [
+        0.9483410120010376,
+        0.13468900322914135,
+        0.5643839836120605
+      ]
+    },
+    "normalizationScale": 1.634854656170276,
+    "dimensions": {
+      "x": 3.1,
+      "y": 0.4408663498763395,
+      "z": 1.8417634734905781
+    },
+    "transformations": [
+      "dedup",
+      "weld",
+      "prune",
+      "centre and authored metre-space scale"
+    ],
+    "outputBytes": 5218092
+  },
+  {
+    "name": "lancet",
+    "triangles": 37640,
+    "uid": "9820cfa9d1084d918c85c6dfb6287737",
+    "sourceUrl": "https://sketchfab.com/3d-models/lancet-9820cfa9d1084d918c85c6dfb6287737",
+    "author": {
+      "name": "𝙁𝙇𝙄𝙂𝙃𝙏𝘾𝙇𝙐𝘽",
+      "profile": "https://sketchfab.com/flightclubua"
+    },
+    "license": {
+      "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+      "label": "CC Attribution",
+      "fullName": "Creative Commons Attribution",
+      "requirements": "Author must be credited. Commercial use is allowed.",
+      "url": "http://creativecommons.org/licenses/by/4.0/",
+      "slug": "by"
+    },
+    "sourceBounds": {
+      "min": [
+        -0.5120279788970947,
+        -0.2888959944248199,
+        -0.9482839703559875
+      ],
+      "max": [
+        0.511139988899231,
+        0.2890360057353974,
+        0.9446120262145996
+      ]
+    },
+    "normalizationScale": 1.0066773319911382,
+    "dimensions": {
+      "x": 1.03,
+      "y": 0.5817910439935896,
+      "z": 1.9055354915643854
+    },
+    "transformations": [
+      "dedup",
+      "weld",
+      "prune",
+      "centre and authored metre-space scale"
+    ],
+    "outputBytes": 5457148
+  },
+  {
+    "name": "geran",
+    "triangles": 8358,
+    "uid": "8f12f601efe44a73b47e30a7077cf249",
+    "sourceUrl": "https://sketchfab.com/3d-models/geranium-2-8f12f601efe44a73b47e30a7077cf249",
+    "author": {
+      "name": "Karosio",
+      "profile": "https://sketchfab.com/Karosio"
+    },
+    "license": {
+      "uri": "https://api.sketchfab.com/v3/licenses/2628dbe5140a4e9592126c8df566c0b7",
+      "label": "CC Attribution-NonCommercial-ShareAlike",
+      "fullName": "CC Attribution-NonCommercial-ShareAlike",
+      "requirements": "Author must be credited. No commercial use. Modified versions must have the same license.",
+      "url": "http://creativecommons.org/licenses/by-nc-sa/4.0/",
+      "slug": "by-nc-sa"
+    },
+    "sourceBounds": {
+      "min": [
+        -1.2480687816127656,
+        -0.23868149063856337,
+        -1.4972210810952682
+      ],
+      "max": [
+        1.2480687816127656,
+        0.2550544971944997,
+        1.9985302251905839
+      ]
+    },
+    "normalizationScale": 1.0015473653501203,
+    "dimensions": {
+      "x": 2.5,
+      "y": 0.49449997779274335,
+      "z": 3.5011605107298367
+    },
+    "transformations": [
+      "dedup",
+      "weld",
+      "prune",
+      "centre and authored metre-space scale"
+    ],
+    "outputBytes": 2030792
+  },
+  {
+    "name": "mountain",
+    "triangles": 62544,
+    "uid": "9fa3c56fd32746bcb0e06cd2c4229ca0",
+    "sourceUrl": "https://sketchfab.com/3d-models/snowy-mountain-terrain-9fa3c56fd32746bcb0e06cd2c4229ca0",
+    "author": {
+      "name": "artfromheath",
+      "profile": "https://sketchfab.com/artfromheath"
+    },
+    "license": {
+      "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+      "label": "CC Attribution",
+      "fullName": "Creative Commons Attribution",
+      "requirements": "Author must be credited. Commercial use is allowed.",
+      "url": "http://creativecommons.org/licenses/by/4.0/",
+      "slug": "by"
+    },
+    "sourceBounds": {
+      "min": [
+        -0.5000767220536251,
+        -0.07292413720864223,
+        -0.40369015772897565
+      ],
+      "max": [
+        0.5002822376933936,
+        0.07030749133048622,
+        0.5964058309393243
+      ]
+    },
+    "normalizationScale": 0.9996411690588453,
+    "dimensions": {
+      "x": 1,
+      "y": 0.14318023259905663,
+      "z": 0.9997371232834411
+    },
+    "transformations": [
+      "dedup",
+      "weld",
+      "simplify ratio 0.24, error .003",
+      "prune",
+      "centre and normalize to one metre width"
+    ],
+    "outputBytes": 2519720
+  },
+  {
+    "name": "dry-terrain",
+    "triangles": 62661,
+    "uid": "d8c7c59079c649bfb96ab31afa919378",
+    "sourceUrl": "https://sketchfab.com/3d-models/free-dry-rock-sand-terrain-d8c7c59079c649bfb96ab31afa919378",
+    "author": {
+      "name": "josevega",
+      "profile": "https://sketchfab.com/josevega"
+    },
+    "license": {
+      "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+      "label": "CC Attribution",
+      "fullName": "Creative Commons Attribution",
+      "requirements": "Author must be credited. Commercial use is allowed.",
+      "url": "http://creativecommons.org/licenses/by/4.0/",
+      "slug": "by"
+    },
+    "sourceBounds": {
+      "min": [
+        -4088,
+        24.806299209594542,
+        3.216427029773851e-14
+      ],
+      "max": [
+        0,
+        1818.8499755859368,
+        4088.0000000000005
+      ]
+    },
+    "normalizationScale": 0.0002446183953033268,
+    "dimensions": {
+      "x": 1,
+      "y": 0.4388560852192618,
+      "z": 1
+    },
+    "transformations": [
+      "dedup",
+      "weld",
+      "simplify ratio 0.12, error .003",
+      "prune",
+      "centre and normalize to one metre width"
+    ],
+    "outputBytes": 6908936
+  },
+  {
+    "name": "boulders",
+    "triangles": 27345,
+    "uid": "d1f2ce6f71aa4c19adbdc541cc888194",
+    "sourceUrl": "https://sketchfab.com/3d-models/cliff-rock-boulder-field-d1f2ce6f71aa4c19adbdc541cc888194",
+    "author": {
+      "name": "Pers Scans",
+      "profile": "https://sketchfab.com/perz_scans"
+    },
+    "license": {
+      "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+      "label": "CC Attribution",
+      "fullName": "Creative Commons Attribution",
+      "requirements": "Author must be credited. Commercial use is allowed.",
+      "url": "http://creativecommons.org/licenses/by/4.0/",
+      "slug": "by"
+    },
+    "sourceBounds": {
+      "min": [
+        57.27372741699219,
+        -23.038436889648423,
+        -114.0043716430664
+      ],
+      "max": [
+        351.55609130859375,
+        48.34749221801757,
+        135.0139923095703
+      ]
+    },
+    "normalizationScale": 0.0033980969391979887,
+    "dimensions": {
+      "x": 1,
+      "y": 0.2425763072025644,
+      "z": 0.8461885403515456
+    },
+    "transformations": [
+      "dedup",
+      "weld",
+      "simplify ratio 0.22, error .003",
+      "prune",
+      "centre and normalize to one metre width"
+    ],
+    "outputBytes": 5016140
+  }
+]

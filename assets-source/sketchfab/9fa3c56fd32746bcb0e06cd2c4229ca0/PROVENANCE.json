@@ -1,0 +1,24 @@
+{
+  "uid": "9fa3c56fd32746bcb0e06cd2c4229ca0",
+  "name": "Snowy Mountain - Terrain",
+  "url": "https://sketchfab.com/3d-models/snowy-mountain-terrain-9fa3c56fd32746bcb0e06cd2c4229ca0",
+  "isDownloadable": true,
+  "author": {
+    "name": "artfromheath",
+    "profile": "https://sketchfab.com/artfromheath"
+  },
+  "license": {
+    "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+    "label": "CC Attribution",
+    "fullName": "Creative Commons Attribution",
+    "requirements": "Author must be credited. Commercial use is allowed.",
+    "url": "http://creativecommons.org/licenses/by/4.0/",
+    "slug": "by"
+  },
+  "faceCount": 260642,
+  "description": "World Machine terrain of a snowy mountain.",
+  "downloadedAt": "2026-10-04T20:47:41.805Z",
+  "downloadMethod": "Authenticated Chrome UI",
+  "requestedTextureResolution": "1k",
+  "sha256": "a85919524082850e99130f831f816c8242de3c5fc40a6c967961306cae184872"
+}

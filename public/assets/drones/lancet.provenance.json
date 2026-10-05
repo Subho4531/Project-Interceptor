@@ -1,0 +1,41 @@
+{
+  "uid": "9820cfa9d1084d918c85c6dfb6287737",
+  "sourceUrl": "https://sketchfab.com/3d-models/lancet-9820cfa9d1084d918c85c6dfb6287737",
+  "author": {
+    "name": "𝙁𝙇𝙄𝙂𝙃𝙏𝘾𝙇𝙐𝘽",
+    "profile": "https://sketchfab.com/flightclubua"
+  },
+  "license": {
+    "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+    "label": "CC Attribution",
+    "fullName": "Creative Commons Attribution",
+    "requirements": "Author must be credited. Commercial use is allowed.",
+    "url": "http://creativecommons.org/licenses/by/4.0/",
+    "slug": "by"
+  },
+  "sourceBounds": {
+    "min": [
+      -0.5120279788970947,
+      -0.2888959944248199,
+      -0.9482839703559875
+    ],
+    "max": [
+      0.511139988899231,
+      0.2890360057353974,
+      0.9446120262145996
+    ]
+  },
+  "normalizationScale": 1.0066773319911382,
+  "dimensions": {
+    "x": 1.03,
+    "y": 0.5817910439935896,
+    "z": 1.9055354915643854
+  },
+  "transformations": [
+    "dedup",
+    "weld",
+    "prune",
+    "centre and authored metre-space scale"
+  ],
+  "outputBytes": 5457148
+}

@@ -1,0 +1,9 @@
+Geranium-2 by Karosio
+Model: https://sketchfab.com/3d-models/geranium-2-8f12f601efe44a73b47e30a7077cf249
+Creator: https://sketchfab.com/Karosio
+License: CC Attribution-NonCommercial-ShareAlike
+http://creativecommons.org/licenses/by-nc-sa/4.0/
+Author must be credited. No commercial use. Modified versions must have the same license.
+
+Downloaded via the user's authenticated Chrome session on 2026-10-04T20:25:54.054Z.
+Unmodified 2K GLB download. Original simulator provenance is unverified.

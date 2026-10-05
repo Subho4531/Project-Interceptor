@@ -1,61 +1,38 @@
-# Environments & Secrets
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Local configuration and Python tooling retained by the repository scaffold.
 .env
 .env.local
 *.env.*.local
-
-# Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
 .venv/
 venv/
-ENV/
-env/
 
-# Node.js
-node_modules/
+# Local editor, system and package-manager files.
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
-.pnpm-debug.log*
-.next/
-out/
-build/
-dist/
-
-# IDE & Editors
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 .idea/
-*.sublime-project
-*.sublime-workspace
-
-# OS & Temporary
 .DS_Store
 Thumbs.db
 *.swp
 *.swo
 *~
 *.log
+
+tools/vendor/
+tools/dotnet/
+tools/dotnet-install.ps1
+tools/**/bin/
+tools/**/obj/
+tools/.nuget/
+tools/.dotnet-home/
+artifacts/qa/

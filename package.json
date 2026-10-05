@@ -1,0 +1,36 @@
+{
+  "name": "border-observation-trainer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "vitest run",
+    "qa": "node tools/browser-qa.mjs",
+    "inspect:package": "node tools/inspect-package.mjs",
+    "assets:prepare": "node tools/prepare-assets.mjs"
+  },
+  "dependencies": {
+    "@babylonjs/core": "^8.0.0",
+    "@babylonjs/loaders": "^8.0.0",
+    "@fontsource/barlow": "^5.2.0",
+    "@fontsource/ibm-plex-mono": "^5.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "^4.2.0",
+    "@gltf-transform/functions": "^4.2.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.4.0",
+    "meshoptimizer": "^1.3.0",
+    "playwright": "^1.51.0",
+    "typescript": "~5.8.0",
+    "vite": "^6.3.0",
+    "vitest": "^3.1.0",
+    "@gltf-transform/extensions": "^4.2.0"
+  }
+}

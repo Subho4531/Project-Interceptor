@@ -1,0 +1,24 @@
+{
+  "uid": "d1f2ce6f71aa4c19adbdc541cc888194",
+  "name": "Cliff Rock Boulder Field",
+  "url": "https://sketchfab.com/3d-models/cliff-rock-boulder-field-d1f2ce6f71aa4c19adbdc541cc888194",
+  "isDownloadable": true,
+  "author": {
+    "name": "Pers Scans",
+    "profile": "https://sketchfab.com/perz_scans"
+  },
+  "license": {
+    "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+    "label": "CC Attribution",
+    "fullName": "Creative Commons Attribution",
+    "requirements": "Author must be credited. Commercial use is allowed.",
+    "url": "http://creativecommons.org/licenses/by/4.0/",
+    "slug": "by"
+  },
+  "faceCount": 122310,
+  "description": "This impressive cliff Rock boulder field I found in the Spanish Pyrenees. Bit scary to scan there since it was quite windy. \nReally cool place close to Pedraforca.\n\n**Fully processed 3D scans**: no light information, color-matched, etc. \n\n**Ready to use for all kind of CGI**\n\nSource Contains:\n\n* .blend\n\n*     .obj\n\n*     .fbx\n\n\n\n8K Textures for each model:\n\n*     normal\n\n*     albedo\n\n*     roughness\n\n\n\nPlease let me know if something isn’t working as it should.",
+  "downloadedAt": "2026-10-04T20:47:43.570Z",
+  "downloadMethod": "Authenticated Chrome UI",
+  "requestedTextureResolution": "1k",
+  "sha256": "31a823e0cc8c7b31685b5ed84ee8c5a3498dfe78df40e2ead15b90c5f7e2d137"
+}

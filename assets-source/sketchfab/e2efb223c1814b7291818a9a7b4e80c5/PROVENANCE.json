@@ -1,0 +1,31 @@
+{
+  "uid": "e2efb223c1814b7291818a9a7b4e80c5",
+  "name": "Orlan-10",
+  "sourceUrl": "https://sketchfab.com/3d-models/orlan-10-e2efb223c1814b7291818a9a7b4e80c5",
+  "localFile": "assets-source/sketchfab/e2efb223c1814b7291818a9a7b4e80c5/orlan-10.glb",
+  "downloadedAt": "2026-10-04T20:25:54.029Z",
+  "downloadMethod": "Sketchfab UI in authenticated Chrome",
+  "format": "GLB",
+  "requestedTextureResolution": "2k",
+  "bytes": 5444692,
+  "sha256": "246d0a71953c9e6c30fbd2f0396b04877efa6a0587e808a7380ec566708f5609",
+  "meshCount": 2,
+  "primitiveCount": 2,
+  "nodeCount": 4,
+  "materialCount": 1,
+  "embeddedImageCount": 3,
+  "textureCount": 3,
+  "animationCount": 0,
+  "vertexCount": 21821,
+  "license": {
+    "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+    "label": "CC Attribution",
+    "fullName": "Creative Commons Attribution",
+    "requirements": "Author must be credited. Commercial use is allowed.",
+    "url": "http://creativecommons.org/licenses/by/4.0/",
+    "slug": "by"
+  },
+  "originalSimulatorProvenance": "unverified",
+  "browserIntegration": "not enabled",
+  "structuralCheck": "GLB v2 header, geometry and embedded images present; no external buffers; render/scale/orientation not verified"
+}

@@ -1,0 +1,5 @@
+Geranium-2 by Karosio
+https://sketchfab.com/3d-models/geranium-2-8f12f601efe44a73b47e30a7077cf249
+CC Attribution-NonCommercial-ShareAlike: http://creativecommons.org/licenses/by-nc-sa/4.0/
+Author must be credited. No commercial use. Modified versions must have the same license.
+Modified: dedup; weld; prune; centre and authored metre-space scale.

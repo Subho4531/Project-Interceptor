@@ -1,0 +1,24 @@
+{
+  "uid": "d8c7c59079c649bfb96ab31afa919378",
+  "name": "FREE - Dry rock sand terrain",
+  "url": "https://sketchfab.com/3d-models/free-dry-rock-sand-terrain-d8c7c59079c649bfb96ab31afa919378",
+  "isDownloadable": true,
+  "author": {
+    "name": "josevega",
+    "profile": "https://sketchfab.com/josevega"
+  },
+  "license": {
+    "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+    "label": "CC Attribution",
+    "fullName": "Creative Commons Attribution",
+    "requirements": "Author must be credited. Commercial use is allowed.",
+    "url": "http://creativecommons.org/licenses/by/4.0/",
+    "slug": "by"
+  },
+  "faceCount": 522242,
+  "description": "Free low res model. If you would like to get a highres version for free, get it at my gumroad. @artofjosevega",
+  "downloadedAt": "2026-10-04T20:47:42.456Z",
+  "downloadMethod": "Authenticated Chrome UI",
+  "requestedTextureResolution": "1k",
+  "sha256": "0cd7a4132d758716e1fd886e4eca792fe54afd986ec34511c19885f3e71c3cbd"
+}

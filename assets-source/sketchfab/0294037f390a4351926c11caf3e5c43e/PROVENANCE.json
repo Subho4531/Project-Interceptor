@@ -1,0 +1,31 @@
+{
+  "uid": "0294037f390a4351926c11caf3e5c43e",
+  "name": "FPV Drone",
+  "sourceUrl": "https://sketchfab.com/3d-models/fpv-drone-0294037f390a4351926c11caf3e5c43e",
+  "localFile": "assets-source/sketchfab/0294037f390a4351926c11caf3e5c43e/fpv_drone.glb",
+  "downloadedAt": "2026-10-04T20:25:54.012Z",
+  "downloadMethod": "Sketchfab UI in authenticated Chrome",
+  "format": "GLB",
+  "requestedTextureResolution": "2k",
+  "bytes": 8350248,
+  "sha256": "60a42eac072f08d2e8c44039910f149c132408a0a73e23cbf380a374367ebdab",
+  "meshCount": 7,
+  "primitiveCount": 7,
+  "nodeCount": 9,
+  "materialCount": 3,
+  "embeddedImageCount": 6,
+  "textureCount": 6,
+  "animationCount": 0,
+  "vertexCount": 52000,
+  "license": {
+    "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+    "label": "CC Attribution",
+    "fullName": "Creative Commons Attribution",
+    "requirements": "Author must be credited. Commercial use is allowed.",
+    "url": "http://creativecommons.org/licenses/by/4.0/",
+    "slug": "by"
+  },
+  "originalSimulatorProvenance": "unverified",
+  "browserIntegration": "not enabled",
+  "structuralCheck": "GLB v2 header, geometry and embedded images present; no external buffers; render/scale/orientation not verified"
+}

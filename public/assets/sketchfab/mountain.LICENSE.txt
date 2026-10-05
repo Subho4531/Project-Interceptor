@@ -1,0 +1,5 @@
+Snowy Mountain - Terrain by artfromheath
+https://sketchfab.com/3d-models/snowy-mountain-terrain-9fa3c56fd32746bcb0e06cd2c4229ca0
+Creative Commons Attribution: http://creativecommons.org/licenses/by/4.0/
+Author must be credited. Commercial use is allowed.
+Modified: dedup; weld; simplify ratio 0.24, error .003; prune; centre and normalize to one metre width.

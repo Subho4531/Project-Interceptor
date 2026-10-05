@@ -1,0 +1,42 @@
+{
+  "uid": "9fa3c56fd32746bcb0e06cd2c4229ca0",
+  "sourceUrl": "https://sketchfab.com/3d-models/snowy-mountain-terrain-9fa3c56fd32746bcb0e06cd2c4229ca0",
+  "author": {
+    "name": "artfromheath",
+    "profile": "https://sketchfab.com/artfromheath"
+  },
+  "license": {
+    "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+    "label": "CC Attribution",
+    "fullName": "Creative Commons Attribution",
+    "requirements": "Author must be credited. Commercial use is allowed.",
+    "url": "http://creativecommons.org/licenses/by/4.0/",
+    "slug": "by"
+  },
+  "sourceBounds": {
+    "min": [
+      -0.5000767220536251,
+      -0.07292413720864223,
+      -0.40369015772897565
+    ],
+    "max": [
+      0.5002822376933936,
+      0.07030749133048622,
+      0.5964058309393243
+    ]
+  },
+  "normalizationScale": 0.9996411690588453,
+  "dimensions": {
+    "x": 1,
+    "y": 0.14318023259905663,
+    "z": 0.9997371232834411
+  },
+  "transformations": [
+    "dedup",
+    "weld",
+    "simplify ratio 0.24, error .003",
+    "prune",
+    "centre and normalize to one metre width"
+  ],
+  "outputBytes": 2519720
+}

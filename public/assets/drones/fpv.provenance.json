@@ -1,0 +1,41 @@
+{
+  "uid": "0294037f390a4351926c11caf3e5c43e",
+  "sourceUrl": "https://sketchfab.com/3d-models/fpv-drone-0294037f390a4351926c11caf3e5c43e",
+  "author": {
+    "name": "Jeyhun1985",
+    "profile": "https://sketchfab.com/Jeyhun1985"
+  },
+  "license": {
+    "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+    "label": "CC Attribution",
+    "fullName": "Creative Commons Attribution",
+    "requirements": "Author must be credited. Commercial use is allowed.",
+    "url": "http://creativecommons.org/licenses/by/4.0/",
+    "slug": "by"
+  },
+  "sourceBounds": {
+    "min": [
+      -0.23812800645828247,
+      -0.1536400020122528,
+      -0.2979699969291687
+    ],
+    "max": [
+      0.23812800645828247,
+      0.13781000673770907,
+      0.2574099898338318
+    ]
+  },
+  "normalizationScale": 1.0078612909483433,
+  "dimensions": {
+    "x": 0.48,
+    "y": 0.2937411820656425,
+    "z": 0.5597459904258315
+  },
+  "transformations": [
+    "dedup",
+    "weld",
+    "prune",
+    "centre and authored metre-space scale"
+  ],
+  "outputBytes": 7995380
+}

@@ -1,0 +1,9 @@
+FPV Drone by Jeyhun1985
+Model: https://sketchfab.com/3d-models/fpv-drone-0294037f390a4351926c11caf3e5c43e
+Creator: https://sketchfab.com/Jeyhun1985
+License: Creative Commons Attribution
+http://creativecommons.org/licenses/by/4.0/
+Author must be credited. Commercial use is allowed.
+
+Downloaded via the user's authenticated Chrome session on 2026-10-04T20:25:54.010Z.
+Unmodified 2K GLB download. Original simulator provenance is unverified.

@@ -1,0 +1,31 @@
+{
+  "uid": "9820cfa9d1084d918c85c6dfb6287737",
+  "name": "Lancet",
+  "sourceUrl": "https://sketchfab.com/3d-models/lancet-9820cfa9d1084d918c85c6dfb6287737",
+  "localFile": "assets-source/sketchfab/9820cfa9d1084d918c85c6dfb6287737/lancet.glb",
+  "downloadedAt": "2026-10-04T20:25:54.043Z",
+  "downloadMethod": "Sketchfab UI in authenticated Chrome",
+  "format": "GLB",
+  "requestedTextureResolution": "2k",
+  "bytes": 5684064,
+  "sha256": "5cc5b4d8ee0f44f3819d29e5f240a084c88468915986016388d450ce24919099",
+  "meshCount": 3,
+  "primitiveCount": 3,
+  "nodeCount": 5,
+  "materialCount": 1,
+  "embeddedImageCount": 3,
+  "textureCount": 3,
+  "animationCount": 0,
+  "vertexCount": 21056,
+  "license": {
+    "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+    "label": "CC Attribution",
+    "fullName": "Creative Commons Attribution",
+    "requirements": "Author must be credited. Commercial use is allowed.",
+    "url": "http://creativecommons.org/licenses/by/4.0/",
+    "slug": "by"
+  },
+  "originalSimulatorProvenance": "unverified",
+  "browserIntegration": "not enabled",
+  "structuralCheck": "GLB v2 header, geometry and embedded images present; no external buffers; render/scale/orientation not verified"
+}

@@ -1,0 +1,82 @@
+[
+  {
+    "uid": "9fa3c56fd32746bcb0e06cd2c4229ca0",
+    "name": "Snowy Mountain - Terrain",
+    "url": "https://sketchfab.com/3d-models/snowy-mountain-terrain-9fa3c56fd32746bcb0e06cd2c4229ca0",
+    "isDownloadable": true,
+    "author": {
+      "name": "artfromheath",
+      "profile": "https://sketchfab.com/artfromheath"
+    },
+    "license": {
+      "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+      "label": "CC Attribution",
+      "fullName": "Creative Commons Attribution",
+      "requirements": "Author must be credited. Commercial use is allowed.",
+      "url": "http://creativecommons.org/licenses/by/4.0/",
+      "slug": "by"
+    },
+    "faceCount": 260642,
+    "description": "World Machine terrain of a snowy mountain."
+  },
+  {
+    "uid": "d8c7c59079c649bfb96ab31afa919378",
+    "name": "FREE - Dry rock sand terrain",
+    "url": "https://sketchfab.com/3d-models/free-dry-rock-sand-terrain-d8c7c59079c649bfb96ab31afa919378",
+    "isDownloadable": true,
+    "author": {
+      "name": "josevega",
+      "profile": "https://sketchfab.com/josevega"
+    },
+    "license": {
+      "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+      "label": "CC Attribution",
+      "fullName": "Creative Commons Attribution",
+      "requirements": "Author must be credited. Commercial use is allowed.",
+      "url": "http://creativecommons.org/licenses/by/4.0/",
+      "slug": "by"
+    },
+    "faceCount": 522242,
+    "description": "Free low res model. If you would like to get a highres version for free, get it at my gumroad. @artofjosevega"
+  },
+  {
+    "uid": "d1f2ce6f71aa4c19adbdc541cc888194",
+    "name": "Cliff Rock Boulder Field",
+    "url": "https://sketchfab.com/3d-models/cliff-rock-boulder-field-d1f2ce6f71aa4c19adbdc541cc888194",
+    "isDownloadable": true,
+    "author": {
+      "name": "Pers Scans",
+      "profile": "https://sketchfab.com/perz_scans"
+    },
+    "license": {
+      "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+      "label": "CC Attribution",
+      "fullName": "Creative Commons Attribution",
+      "requirements": "Author must be credited. Commercial use is allowed.",
+      "url": "http://creativecommons.org/licenses/by/4.0/",
+      "slug": "by"
+    },
+    "faceCount": 122310,
+    "description": "This impressive cliff Rock boulder field I found in the Spanish Pyrenees. Bit scary to scan there since it was quite windy. \nReally cool place close to Pedraforca.\n\n**Fully processed 3D scans**: no light information, color-matched, etc. \n\n**Ready to use for all kind of CGI**\n\nSource Contains:\n\n* .blend\n\n*     .obj\n\n*     .fbx\n\n\n\n8K Textures for each model:\n\n*     normal\n\n*     albedo\n\n*     roughness\n\n\n\nPlease let me know if something isn’t working as it should."
+  },
+  {
+    "uid": "66dcdec2a0c44d1d9cc2ee12a4abc186",
+    "name": "GTA 6 Prison Tower | Guard Tower | WatchTower",
+    "url": "https://sketchfab.com/3d-models/gta-6-prison-tower-guard-tower-watchtower-66dcdec2a0c44d1d9cc2ee12a4abc186",
+    "isDownloadable": true,
+    "author": {
+      "name": "abhayexe",
+      "profile": "https://sketchfab.com/abhayexe"
+    },
+    "license": {
+      "uri": "https://api.sketchfab.com/v3/licenses/72eb2b1960364637901eacce19283624",
+      "label": "Free Standard",
+      "fullName": "Free Standard",
+      "requirements": "Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works",
+      "url": "https://sketchfab.com/licenses",
+      "slug": "free-st"
+    },
+    "faceCount": 4880,
+    "description": "Reference:\n![](https://gta6game.co.uk/wp-content/uploads/2026/03/gta-6-police-station.png)\n\n****made in blender by me. Used smart node based materials that i made myself in blender.\n\nTextured, modelled and baked in blender by me. No AI is used here Gameready Realistic 4K textures baked and LowPoly Substance Painter not used ❌ Blender only✔️\n\nYou are free to use my work in any of your works (games, videos anything) without credits but you can let me know your works in the comments just because I like to see them.\n\n4096x4096 4k PBR maps.\n\ngameready ✔️ realistic ✔️ photoreal ✔️ pbr ✔️ unrealengine ✔️ unity ✔️ nanite-ready ✔️ high-detail ✔️ optimized-mesh ✔️ environment-asset ✔️ urban ✔️ cityscape ✔️ asian-architecture ✔️ modular ✔️ nextgen ✔️ cinematic ✔️ archviz ✔️ open-world ✔️ street-scene ✔️ AAA-quality ✔️ nextgen-assets ✔️ nextgen-environment ✔️ realworld-scale ✔️ accurate-proportions ✔️ physically-based ✔️ high-fidelity ✔️ film-quality ✔️ cinem"
+  }
+]

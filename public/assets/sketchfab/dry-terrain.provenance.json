@@ -1,0 +1,42 @@
+{
+  "uid": "d8c7c59079c649bfb96ab31afa919378",
+  "sourceUrl": "https://sketchfab.com/3d-models/free-dry-rock-sand-terrain-d8c7c59079c649bfb96ab31afa919378",
+  "author": {
+    "name": "josevega",
+    "profile": "https://sketchfab.com/josevega"
+  },
+  "license": {
+    "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+    "label": "CC Attribution",
+    "fullName": "Creative Commons Attribution",
+    "requirements": "Author must be credited. Commercial use is allowed.",
+    "url": "http://creativecommons.org/licenses/by/4.0/",
+    "slug": "by"
+  },
+  "sourceBounds": {
+    "min": [
+      -4088,
+      24.806299209594542,
+      3.216427029773851e-14
+    ],
+    "max": [
+      0,
+      1818.8499755859368,
+      4088.0000000000005
+    ]
+  },
+  "normalizationScale": 0.0002446183953033268,
+  "dimensions": {
+    "x": 1,
+    "y": 0.4388560852192618,
+    "z": 1
+  },
+  "transformations": [
+    "dedup",
+    "weld",
+    "simplify ratio 0.12, error .003",
+    "prune",
+    "centre and normalize to one metre width"
+  ],
+  "outputBytes": 6908936
+}

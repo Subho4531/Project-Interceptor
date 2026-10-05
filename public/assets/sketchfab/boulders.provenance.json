@@ -1,0 +1,42 @@
+{
+  "uid": "d1f2ce6f71aa4c19adbdc541cc888194",
+  "sourceUrl": "https://sketchfab.com/3d-models/cliff-rock-boulder-field-d1f2ce6f71aa4c19adbdc541cc888194",
+  "author": {
+    "name": "Pers Scans",
+    "profile": "https://sketchfab.com/perz_scans"
+  },
+  "license": {
+    "uri": "https://api.sketchfab.com/v3/licenses/322a749bcfa841b29dff1e8a1bb74b0b",
+    "label": "CC Attribution",
+    "fullName": "Creative Commons Attribution",
+    "requirements": "Author must be credited. Commercial use is allowed.",
+    "url": "http://creativecommons.org/licenses/by/4.0/",
+    "slug": "by"
+  },
+  "sourceBounds": {
+    "min": [
+      57.27372741699219,
+      -23.038436889648423,
+      -114.0043716430664
+    ],
+    "max": [
+      351.55609130859375,
+      48.34749221801757,
+      135.0139923095703
+    ]
+  },
+  "normalizationScale": 0.0033980969391979887,
+  "dimensions": {
+    "x": 1,
+    "y": 0.2425763072025644,
+    "z": 0.8461885403515456
+  },
+  "transformations": [
+    "dedup",
+    "weld",
+    "simplify ratio 0.22, error .003",
+    "prune",
+    "centre and normalize to one metre width"
+  ],
+  "outputBytes": 5016140
+}

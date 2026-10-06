@@ -57,6 +57,8 @@ See [verification record](VERIFICATION.md) for current automated checks, browser
 
 [PRD](docs/PRD.md), [implementation roadmap](docs/IMPLEMENTATION_PLAN.md), [technical architecture](docs/ARCHITECTURE.md), [regional sources and import instructions](docs/REGIONAL_ASSETS.md), [asset manifest](docs/ASSET_MANIFEST.md), [verification record](VERIFICATION.md).
 
+For Vercel, enable the project’s Git LFS setting and redeploy so model binaries are included; see [Vercel deployment notes](docs/VERCEL_DEPLOYMENT.md).
+
 Raw crops, source models, hashes and licences are retained under assets-source/. Optimized worlds are public/assets/regions/; compound modules are public/assets/environment/. Geranium retains its noncommercial/ShareAlike licence. No cookies or API credentials are stored.
 
 Screenshots and browser diagnostics: `artifacts/qa/phase3/` and `artifacts/qa/sensor/`. Scene selection does not place these geographically distant posts beside one another; one regional exercise is active at a time.

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/dashboard/:path*", "destination": "/" },
+    { "source": "/trainer/:path*", "destination": "/" },
+    { "source": "/observer/:path*", "destination": "/" },
+    { "source": "/progress/:path*", "destination": "/" },
+    { "source": "/room/:path*", "destination": "/" },
+    { "source": "/aar/:sessionId", "destination": "/" }
+  ]
+}

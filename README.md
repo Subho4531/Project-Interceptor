@@ -1,6 +1,6 @@
 # Project Interceptor
 
-Three regional border training environments and an instructor dashboard are implemented. The [revised PRD](docs/PRD.md) and [implementation roadmap](docs/IMPLEMENTATION_PLAN.md) define the next sensor-led training loop. Weighted scoring, persistent AAR, competency progression, a command-room interior and VR are planned work.
+Three regional border training environments, an instructor dashboard, and the first sensor-led trainee exercise are implemented. The [revised PRD](docs/PRD.md) and [implementation roadmap](docs/IMPLEMENTATION_PLAN.md) define the broader training loop. Competency progression, a command-room interior, and VR remain planned work.
 
 ## Run locally
 
@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Open /trainer for the current ground observer or /dashboard to select a post. The planned sensor-led trainee console will use /trainer in a later implementation phase.
+Open `/trainer` for the sensor-led Basic Detection exercise, `/observer` for the ground-level 3D view, or `/dashboard` for the instructor map. Completed exercise replays open at `/aar/:sessionId`.
 
 ## Training posts
 
@@ -29,7 +29,7 @@ WASD moves, mouse looks, Shift walks briskly, Z zooms, E/Space marks a contact, 
 
 Settings select the post, exercise, day/night, visibility and rendering quality. Default: Shakti, low-altitude ingress, 25-second quiet period, daytime, clear visibility. Existing FPV, Orlan, Lancet and Geranium models remain available for four fictional exercise families and familiarisation. They are imported Sketchfab representations; the original cooked Unreal model export remains a separate blocked pipeline.
 
-The shared session and simulated radar/EO foundation were added during implementation. Their extended desktop QA is unfinished following the scope change. Recorded replay, persistent history, cloud/voice assistance, interceptor physics and XR remain future work.
+The `/trainer` exercise delivers a delayed neutral radar cue, acknowledgment timing, EO/RF/flight-roster/movement evidence requests, qualitative analysis support, separate object/coordination/affiliation/threat assessments, high-level decisions, a scheduled simulated consequence, weighted scoring, and an AAR. Completed practice attempts are saved in the browser's IndexedDB and can be replayed or exported as JSON. The trainee view withholds scenario truth until the AAR. This is one authored Basic Detection exercise; the ambiguous-target and swarm exercises, procedural variation, cross-session competency tracking, 3D command room, and VR remain on the roadmap. The simulated response is a command-level outcome, without interceptor physics.
 
 ## Build and checks
 
@@ -38,11 +38,12 @@ npm test
 npm run build
 node tools/verify-regions.mjs
 node tools/serve-static.mjs
+node tools/sensor-smoke.mjs # while the static server is running
 ```
 
-Deploy dist/ to a static host with /trainer and /dashboard rewritten to index.html. The included server supports TRAINER_PORT and TRAINER_BASE_PATH. Packaged 3D worlds require no rendering server or runtime Sketchfab login.
+Deploy dist/ to a static host with `/trainer`, `/observer`, `/dashboard`, and `/aar/:sessionId` rewritten to index.html. The included server supports TRAINER_PORT and TRAINER_BASE_PATH. Packaged 3D worlds require no rendering server or runtime Sketchfab login.
 
-Verified: 75 tests, production build, all three worlds in Chrome at 1280 x 720, imported terrain/collision alignment and local asset loading. The broader Chrome/Edge performance suite is available through npm run qa but is not claimed complete.
+The first sensor-led exercise is covered by engine unit tests and a Chrome browser smoke test at 1280 x 720. See [verification record](VERIFICATION.md) for current results and limits. The broader Chrome/Edge performance suite is available through `npm run qa` but is not claimed complete.
 
 ## Assets and evidence
 
@@ -50,5 +51,5 @@ Verified: 75 tests, production build, all three worlds in Chrome at 1280 x 720, 
 
 Raw crops, source models, hashes and licences are retained under assets-source/. Optimized worlds are public/assets/regions/; compound modules are public/assets/environment/. Geranium retains its noncommercial/ShareAlike licence. No cookies or API credentials are stored.
 
-Screenshots and browser diagnostics: artifacts/qa/phase3/. Scene selection does not place these geographically distant posts beside one another; one regional exercise is active at a time.
+Screenshots and browser diagnostics: `artifacts/qa/phase3/` and `artifacts/qa/sensor/`. Scene selection does not place these geographically distant posts beside one another; one regional exercise is active at a time.
 

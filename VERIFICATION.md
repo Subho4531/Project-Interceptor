@@ -1,5 +1,16 @@
 # Verification record
 
+## First sensor-led exercise — 6 October 2026
+
+The first playable Basic Detection flow is available at `/trainer`; the former ground-level view is at `/observer`. It uses the existing Shakti regional scene and shared fixed-step session. A delayed neutral radar cue leads to trainee acknowledgment, requested EO/RF/roster/history evidence, separate classification and threat judgments, high-level decisions, a scheduled abstract consequence, and a scored AAR. Completed practice attempts persist in local IndexedDB and open at `/aar/:sessionId` with a time scrubber for delivered evidence and recorded actions. Scenario truth is exposed only after completion.
+
+- `npm test`: 87/87 tests pass across 6 files, including deterministic cue timing, privacy, evidence timing, authorization, consequence timing and 25/30/20/25 scoring.
+- `npm run build`: TypeScript and Vite production build pass. Vite still advises about the existing large trainer/dashboard chunks.
+- `node tools/sensor-smoke.mjs` against the static build: Chrome 1280×720 passes from entry through cue, evidence, assessment, decisions, AAR, IndexedDB save and replay; no page errors. Evidence is in `artifacts/qa/sensor/`.
+- `git diff --check` passes.
+
+This milestone is one authored exercise and one local practice history. Ambiguous/benign and coordinated-group cases, procedural variation, competency progression, 3D command room and VR remain unimplemented. The qualitative analysis panel is rule-based, and the response is an abstract command-level outcome; neither is a validated detector or interceptor simulation. No new Edge, 1920×1080, FPS or long-duration resource result is claimed.
+
 ## Documentation alignment — 6 October 2026
 
 PRD v4, the phased implementation roadmap, architecture, repository guidance and README now describe the actual Babylon.js application and the proposed sensor-led training path. This is a documentation update only: it adds no new scored exercise, RF channel, persistence, competency system or VR capability. Earlier implementation and browser results below remain historical evidence. Documentation links and the repository diff were checked; no application tests were required for these text-only changes.

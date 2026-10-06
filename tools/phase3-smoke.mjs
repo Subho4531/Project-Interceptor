@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 const browser=await chromium.launch({channel:'chrome',headless:true});
 const page=await browser.newPage({viewport:{width:1280,height:720}});
 const errors=[];page.on('pageerror',e=>errors.push(String(e)));
-await page.goto('http://127.0.0.1:4181/trainer?qa=1');
+await page.goto('http://127.0.0.1:4181/observer?qa=1');
 const results=[];
 for(const postId of ['shakti-punjab','maru-rajasthan','himadri-sikkim']){
   if(postId!=='shakti-punjab') await page.evaluate(postId=>window.__sessionQA.command({type:'post',postId,discardConfirmed:true}),postId);

@@ -88,6 +88,7 @@ export default function App() {
       <div className="session"><span className={`status-dot ${running ? 'live' : ''}`} /><span>{ready ? (running ? 'IN SESSION' : state.status === 'completed' ? 'COMPLETE' : state.status === 'paused' ? 'PAUSED' : 'STANDBY') : 'PREPARING'}</span><time>{timecode(state.time)}</time></div>
     </header>
     <div className="hud-actions">
+      <a className="trainer-dashboard-link" href={appLink('trainer')}>Training console ↗</a>
       <a className="trainer-dashboard-link" href={appLink('dashboard')}>Command dashboard ↗</a>
       {running && <button className="icon-button" onClick={() => trainer.current?.pause()} aria-label="Pause session" title="Pause (P)"><Icon type="pause" /></button>}
       <button className="icon-button" onClick={resetExercise} disabled={!ready} aria-label="Reset session" title="Reset session"><Icon type="reset" /></button>

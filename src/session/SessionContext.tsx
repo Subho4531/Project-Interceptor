@@ -11,6 +11,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       snapshot: controller.getSnapshot,
       command: controller.command,
       export: () => controller.exportSession(),
+      exercise: () => controller.getExerciseState(),
+      exerciseAction: controller.exerciseAction.bind(controller),
     }});
     return () => {
       controller.stopScheduler();

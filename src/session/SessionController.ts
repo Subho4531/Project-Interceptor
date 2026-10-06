@@ -4,6 +4,7 @@ import { createTrainingScenario } from '../simulation/trainingScenarios';
 import { GridTerrainSurface, setTerrainSurface } from '../simulation/TerrainSurface';
 import type { Heightfield } from '../simulation/TerrainSurface';
 import { SensorEngine } from '../simulation/SensorEngine';
+import { ExerciseEngine, type ExerciseAction } from '../training/Exercise';
 import { terrainHeight } from '../simulation/world';
 import { localToGeographic } from '../simulation/geographic';
 import { posts, postById } from '../dashboard/posts';
@@ -36,6 +37,7 @@ export class SessionController implements SessionAdapter {
   sim!: Simulation;
   environment!: EnvironmentConfig;
   sensorEngine!: SensorEngine;
+  sensorExercise!: ExerciseEngine;
   observer!: ObserverPose;
   alpha=0;
   private postId:PostId;
@@ -92,6 +94,7 @@ export class SessionController implements SessionAdapter {
     const config=['low-ingress','surveillance','penetration','swarm'].includes(this.exerciseId)?createTrainingScenario(this.environment,this.scenarioId,{swarmCount:this.swarmCount,pairDelay:this.pairDelay}):createScenario(this.environment,this.exerciseId);config.quietPeriod=this.quietPeriod;config.conditions={...conditions};
     if(config.training)config.training.briefing.description=`${postById(this.postId).name}: ${config.training.briefing.description}`;
     this.sim=new Simulation(config,this.environment,this.availableAssets);this.sensorEngine=new SensorEngine(this.environment,config.seed);
+    this.sensorExercise=new ExerciseEngine({seed:config.seed,quietPeriod:config.quietPeriod});
     if(typeof document!=='undefined')this.sim.setHidden(Boolean(document.hidden));
     const spawn=this.environment.observerSpawn;
     this.observer={position:{x:spawn.x,y:terrainHeight(spawn.x,spawn.z,this.environment.terrain)+1.72,z:spawn.z},yaw:spawn.heading,pitch:0,zoom:false};
@@ -153,10 +156,10 @@ export class SessionController implements SessionAdapter {
     if(['post','scenario','reset'].includes(command.type)&&active&&!(command as {discardConfirmed?:boolean}).discardConfirmed)return reject('Confirm discarding the current session.');
     let message='';
     switch(command.type){
-      case 'start':if(this.sim.status!=='ready')return reject('Start requires a ready session.');if(!this.assetsReady)return reject(this.error??'Required local assets are loading.');this.sim.start();if((this.sim.status as string)!=='running')return reject('Session cannot start while hidden.');message='Session started.';break;
+      case 'start':if(this.sim.status!=='ready')return reject('Start requires a ready session.');if(!this.assetsReady)return reject(this.error??'Required local assets are loading.');this.sim.start();if((this.sim.status as string)!=='running')return reject('Session cannot start while hidden.');this.updateExercise();message='Session started.';break;
       case 'pause':if(this.sim.status!=='running')return reject('Session is not running.');this.sim.pause(command.reason??source);message='Session paused; clock held.';break;
       case 'resume':if(this.sim.status!=='paused')return reject('Session is not paused.');this.sim.resume();if((this.sim.status as string)!=='running')return reject('Resume requires a visible tab.');message='Session resumed.';break;
-      case 'finish':if(!['running','paused'].includes(this.sim.status))return reject('Start before finishing.');this.sim.finish();message='Exercise finished; review ready.';break;
+      case 'finish':if(!['running','paused'].includes(this.sim.status))return reject('Start before finishing.');this.sim.finish();this.updateExercise();message='Exercise finished; review ready.';break;
       case 'reset':this.rebuild();message='Session reset; ready at 00:00.';break;
       case 'post':if(!posts.some(p=>p.id===command.postId))return reject('Unknown post.');this.postId=command.postId;this.generation++;this.loadPromise=undefined;this.assetsReady=false;this.loadState='idle';this.error=undefined;this.makeEnvironment();this.rebuild();message=`${postById(this.postId).name} selected; loading regional assets.`;void this.loadAssets();break;
       case 'scenario':if(!['low-ingress','surveillance','penetration','swarm'].includes(command.scenarioId))return reject('Unknown exercise.');this.scenarioId=command.scenarioId;this.exerciseId=this.scenarioId;this.rebuild();message='Exercise selected; ready at 00:00.';break;
@@ -168,22 +171,41 @@ export class SessionController implements SessionAdapter {
         if(typeof location==='undefined'||!new URLSearchParams(location.search).has('qa'))return reject('Manual stepping is disabled in live training.');
         if(!Number.isFinite(command.seconds)||command.seconds<=0||command.seconds>300||!this.assetsReady||this.sim.status==='completed')return reject('QA stepping requires ready assets and 0–300 seconds.');
         if(this.sim.status==='ready')this.sim.start();else if(this.sim.status==='paused')this.sim.resume();
-        let remaining=command.seconds;while(remaining>1e-10&&this.sim.status==='running'){const step=Math.min(FIXED_STEP,remaining);this.alpha=this.sim.advance(step);this.sensorEngine.update(this.sim.time,this.sim.entities.values(),this.sim.conditions);remaining-=step;}
+        let remaining=command.seconds;while(remaining>1e-10&&this.sim.status==='running'){const step=Math.min(FIXED_STEP,remaining);this.alpha=this.sim.advance(step);this.updateExercise();remaining-=step;}
         this.sim.pause('qa-step');message=`QA advanced ${command.seconds} simulation seconds.`;break;
       }
     }
     this.log('command-accepted',`${command.type}: ${message}`,source);this.refresh();return {ok:true,message};
   };
+  private updateExercise(){
+    this.sensorEngine.update(this.sim.time,this.sim.entities.values(),this.sim.conditions);
+    this.sensorExercise.tick(this.sim.time,[...this.sensorEngine.tracks.values()],this.sensorEngine.observations);
+    if(this.sim.status==='completed'&&this.sensorExercise.state().status!=='completed')this.sensorExercise.act({type:'finish'});
+  }
+  getExerciseState(){return this.sensorExercise.state();}
+  exerciseAction(action:ExerciseAction):CommandResult{
+    if(this.sim.status!=='running')return {ok:false,message:'Start or resume the exercise before acting.'};
+    if(action.type==='request-eo'){
+      const track=this.sensorExercise.state().tracks.find(t=>t.id===action.contactId);
+      if(track)this.sensorEngine.setEO(track.bearing,0,false);
+    }
+    const accepted=this.sensorExercise.act(action);
+    if(!accepted)return {ok:false,message:'This action is not available for the selected contact.'};
+    if(action.type==='finish')this.sim.finish('operator');
+    this.log('trainee-action',action.type,'operator');
+    this.refresh();
+    return {ok:true,message:'Action recorded.'};
+  }
   advance(seconds:number){
     if(!Number.isFinite(seconds)||seconds<=0||this.sim.status!=='running')return;
     let remaining=Math.min(seconds,.25)*this.speed;
-    while(remaining>1e-10&&this.sim.status==='running'){const step=Math.min(FIXED_STEP,remaining);this.alpha=this.sim.advance(step);this.sensorEngine.update(this.sim.time,this.sim.entities.values(),this.sim.conditions);remaining-=step;}
+    while(remaining>1e-10&&this.sim.status==='running'){const step=Math.min(FIXED_STEP,remaining);this.alpha=this.sim.advance(step);this.updateExercise();remaining-=step;}
     this.refresh();
   }
   startScheduler(){
     if(this.frame!==undefined)return;let previous=performance.now(),lastPublish=previous;
     const tick=(now:number)=>{const dt=Math.min(.25,Math.max(0,(now-previous)/1000));previous=now;
-      if(this.sim.status==='running'){let remaining=dt*this.speed;while(remaining>1e-10&&this.sim.status==='running'){const step=Math.min(FIXED_STEP,remaining);this.alpha=this.sim.advance(step);this.sensorEngine.update(this.sim.time,this.sim.entities.values(),this.sim.conditions);remaining-=step;}}
+      if(this.sim.status==='running'){let remaining=dt*this.speed;while(remaining>1e-10&&this.sim.status==='running'){const step=Math.min(FIXED_STEP,remaining);this.alpha=this.sim.advance(step);this.updateExercise();remaining-=step;}}
       if(now-lastPublish>=100){this.refresh();lastPublish=now;}this.frame=requestAnimationFrame(tick);};this.frame=requestAnimationFrame(tick);
     const visibility=()=>{this.sim.setHidden(document.hidden);previous=performance.now();this.refresh();};
     const blur=()=>{this.sim.pause('window-blur');previous=performance.now();this.refresh();};

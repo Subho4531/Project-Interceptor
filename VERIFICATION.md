@@ -1,5 +1,24 @@
 # Verification record
 
+## Curriculum, scenario variety and command room — 6 October 2026
+
+This entry supersedes the scope statements in the historical entries below. The implemented desktop flow now includes basic detection, sensor-only uncertain returns, authorization review, independent contacts and coordinated activity, seeded route variation, sensor degradation, Levels 0–4, local profiles/progression, checkpoint recovery, read-only AAR and JSON bundle transfer. Rural/semi-urban settings and clear/fog/rain conditions are connected. `/room` uses imported CC0 modules with shared spatial commands and a seated PC WebXR adapter.
+
+- Unit tests: **120/120**, 11 files. Includes per-contact/group scoring, ambiguity/friendly restraint, seeded sensor health, progression exclusions, nested import validation, regional scenario validation, recipe privacy and input-mode history.
+- Production TypeScript/Vite build passes. The MapLibre worker is now explicitly bundled; the release check found and fixed its prior static-build 404. Large Babylon rendering chunks remain lazily loaded by route; Vite reports their size.
+- `tools/phase3-qa.mjs`: Chrome 154.0.8037.95 and Edge 155.0.4283.39 at **1280×720 and 1920×1080**, all three posts. Shared clock/pause, 12-aircraft setup, EO controls, exports, terrain-following movement, pointer-lock pause, principal fence collision, terrain/render correspondence, day/night and **25 resets with stable mesh/material/texture counts** pass without page errors or local asset failures. Evidence: `artifacts/qa/phase3/report.json` and screenshots.
+- Observer frame-rate samples: approximately **59.9–60.1 FPS** on Ryzen 5 5600H, 12 logical cores, 15 GiB reported memory, ANGLE AMD Radeon integrated graphics / D3D11. This is headless browser evidence for the tested observer workload, not headset FPS or every sensor-wall workload.
+- `tools/scenario-smoke.mjs`: Chrome 1280×720 runs the uncertain, authorization, coordinated and independent cases through acknowledgement/investigation/final review; expected physical/neutral contact counts, projection privacy and reset pass.
+- `tools/sensor-smoke.mjs`: complete Basic Detection through EO/thermal investigation, decisions, consequence, weighted review, save and replay passes on the expanded build.
+- `tools/curriculum-smoke.mjs`: Chrome 1280×720 passes semi-urban/rain propagation into rendered obstacle diagnostics, interrupted checkpoint recovery after reload with a held AAR, level/mode/rubric filters, QA/demo progression exclusion, completed resolved-recipe bundle export/import/re-export, and command-room shared actions/fallback. No page errors or local asset failures.
+- `tools/dashboard-smoke.mjs`: Edge 1280×720 passes direct/linked dashboard, live radar, EO/false-color views and tactical map switching. The wider Chrome/Edge matrix also covers dashboard/EO access.
+- `tools/offline-smoke.mjs`: `/progress`, `/trainer`, `/dashboard` including tactical map, `/observer`, and `/room` load with all external HTTP requests blocked; no external requests, local failures or page errors. Optional online basemaps are not part of this test.
+- `tools/verify-regions.mjs`: all three imported heightfields, terrain meshes, graded platforms and imagery alignment checks pass.
+
+PC VR through Chrome/Edge and OpenXR is the selected target. Desktop spatial commands and unsupported-headset fallback have automated coverage; no connected real headset was available for controller, comfort, legibility, session-loss or headset-FPS acceptance. Thermal remains an explicitly labeled optical false-color visualization; RF/roster clues are fictional authored evidence. The uncertain case has a sensor-only return rather than a physical bird group. Seed variation is constrained template generation, not arbitrary mission synthesis. Optional standing locomotion/teleport/snap-turn remain pending. These limits prevent declaring the full PRD complete.
+
+## Historical implementation evidence
+
 ## Dashboard access and sensor wall — 6 October 2026
 
 The active repository is `C:\Users\subho\OneDrive\Documents\Project Interceptor`; the older Downloads `web-trainer` copy has no dashboard. The current build opens `/dashboard` both directly and from the trainee route. The dashboard now opens on a sensor wall with a simulated radar scope, one live EO render, a parallel false-colour visualization of that render, EO/radar counts, conditions and RF query status. A measured radar return can cue the EO camera. The geographic tactical map remains available through its view button. `/trainer` can open the same EO/thermal pair when the trainee requests EO evidence.

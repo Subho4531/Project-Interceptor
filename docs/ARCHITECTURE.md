@@ -4,6 +4,16 @@
 
 **Runtime today:** React 19 + TypeScript + Vite, Babylon.js/WebGL2, MapLibre; static build with local assets
 
+## Integrated expansion
+
+`ScenarioValidation` resolves bounded seeded templates against imported terrain and modeled radar opportunity before session construction, recording retry/fallback metadata. `SensorEngine` uses the selected difficulty for seeded delay, noise and intermittent delivery. `ExerciseEngine` maps private per-contact truth to neutral delivered evidence; coordinated activity is one group objective. The ambiguous return has no physical entity.
+
+`SessionController.prepareTraining` configures mode, level, profile, seed, rural/semi-urban setting and weather. Assessment configuration is locked; pause, view changes, instructor access and QA stepping record progression exclusions. Rendering quality never changes sensor conditions. Renderer adapters remain clock consumers.
+
+`SessionProvider` queues IndexedDB archive writes with five-second trainee checkpoints and final review replacement. `AttemptStore` validates profiles, nested evidence, scores, checkpoints and versioned bundles. `Progression` evaluates the two-distinct-seed threshold within one profile/level/rubric. Reload recovery produces held interrupted history. Completed archives alone include private resolved routes through `getCompletedRecipe`; live trainee exports do not.
+
+`/progress` exposes curriculum and filtered profile/unit history; `/aar/:id` replays delivered evidence or completed truth without mutating the session. `/room` loads the imported Kenney interior and spatial monitor controls. Its WebXR seated controller rays call the same exercise commands; input-mode transitions are retained in AAR. Real headset acceptance and independent IR remain outside current verification.
+
 **Target:** Extend the existing runtime for the [PRD v4](PRD.md), in the order defined by the [roadmap](IMPLEMENTATION_PLAN.md).
 
 ## Current implementation

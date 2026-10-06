@@ -41,8 +41,9 @@ for(const channel of channels) {
     await page.getByRole('button',{name:'Export session JSON',exact:false}).click();
     const download=await downloadPromise;await download.saveAs(filepath(channel+'-'+width+'-session.json'));
     await page.screenshot({path:filepath(channel+'-'+width+'-dashboard.png')});
-    await page.getByRole('button',{name:'EO camera',exact:true}).click();
-    await page.getByLabel('Simulated EO station').getByText('PAUSED',{exact:false}).waitFor({timeout:60000});
+    await page.getByRole('button',{name:'Tactical map',exact:true}).click();
+    await page.getByRole('button',{name:'EO / thermal',exact:true}).click();
+    await page.getByLabel('Simulated EO and thermal views').getByText('PAUSED',{exact:false}).waitFor({timeout:60000});
     await page.getByLabel('EO bearing').fill('35');
     await page.getByRole('button',{name:'Zoom to 8',exact:false}).click();
     assert.equal((await snap()).eo.zoom,true);
@@ -54,7 +55,7 @@ for(const channel of channels) {
       await command({type:'post',postId,discardConfirmed:true});
       await page.waitForFunction(post=>window.__sessionQA?.snapshot().postId===post&&window.__sessionQA.snapshot().assetsReady,postId,{timeout:60000});
       await command({type:'scenario',scenarioId:'low-ingress',discardConfirmed:true});
-      await page.getByRole('link',{name:'Ground trainer',exact:false}).click();
+      await page.getByRole('link',{name:'Ground observer',exact:false}).click();
       await page.waitForFunction(()=>window.__trainerQA?.snapshot().ready,undefined,{timeout:60000});
       const diagnostics=await page.evaluate(()=>window.__trainerQA.snapshot());
       assert.equal(diagnostics.sessionId,(await snap()).sessionId);
@@ -110,4 +111,3 @@ for(const channel of channels) {
   await browser.close();
 }
 console.log('Phase 3 browser checks complete');
-

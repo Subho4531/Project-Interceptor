@@ -2,6 +2,8 @@
 
 **Version:** 4.0 · 6 October 2026
 
+**Implementation update:** the desktop prototype now includes five sensor-led cases, constrained seed variation, sensor degradation, competency levels, profile/unit history, replay and JSON transfer, imported command-room controls and a seated WebXR adapter. The original requirements remain the acceptance target. Independent IR, broader physical benign populations and real PC-headset acceptance are not yet verified or complete; consult VERIFICATION.md before making product claims.
+
 **Requirement source:** SIH26247 text supplied by the project owner
 
 **Delivery:** Offline capable desktop training first; immersive VR in a later milestone

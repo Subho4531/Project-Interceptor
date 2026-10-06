@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile, copyFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { Document, NodeIO } from '@gltf-transform/core';
@@ -33,7 +33,8 @@ await place('televisionModern',[0,1.15,2.84],[3.1,1.65,.15]);
 await place('lampSquareCeiling',[0,2.95,0],[1.2,.1,1.2]);
 await document.transform(dedup(),prune(),unpartition());
 const bytes=await io.writeBinary(document);await writeFile(path.join(output,'room.glb'),bytes);
-await copyFile(path.join(root,'assets-source/command-room/furniture/License.txt'),path.join(output,'LICENSE.txt'));
+const license=await readFile(path.join(root,'assets-source/command-room/furniture/License.txt'),'utf8');
+await writeFile(path.join(output,'LICENSE.txt'),license.replace(/\r/g,'').split('\n').map(line=>line.trimEnd()).join('\n').trim()+'\n');
 const manifest={source:'https://kenney.nl/assets/furniture-kit',author:'Kenney',license:'CC0-1.0',licenseUrl:'https://creativecommons.org/publicdomain/zero/1.0/',description:'Fictional command room assembled from imported Furniture Kit modules. Module transforms are authored in metres.',sha256:createHash('sha256').update(bytes).digest('hex'),placements};
 await writeFile(path.join(output,'manifest.json'),JSON.stringify(manifest,null,2));
 await writeFile(path.join(root,'assets-source/command-room/provenance.json'),JSON.stringify({...manifest,archiveSha256:createHash('sha256').update(await readFile(path.join(root,'assets-source/command-room/kenney_furniture-kit.zip'))).digest('hex')},null,2));

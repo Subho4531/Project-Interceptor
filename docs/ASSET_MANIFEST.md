@@ -1,5 +1,7 @@
 # 3D Asset Manifest & Specification (Project Interceptor)
 
+**Command-room addition (6 October 2026):** `public/assets/command-room/room.glb` is assembled offline from imported [Kenney Furniture Kit](https://kenney.nl/assets/furniture-kit) modules, CC0. The source ZIP/provenance, optimized hash, authored placements and license are retained. Reproduction instructions and PC VR boundaries are in [COMMAND_ROOM.md](COMMAND_ROOM.md). Existing aircraft license terms are unchanged.
+
 > **Mandatory Rule**: All 3D meshes, terrain maps, and sky environments must be imported from validated PBR assets (GLB / glTF / HDR / PBR texture maps). Procedural placeholder primitives (cubes, cylinders) and procedural terrain generation are strictly prohibited.
 
 ---

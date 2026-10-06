@@ -2,6 +2,12 @@
 
 **Version:** 4.0 · 6 October 2026
 
+## Implementation status — 6 October 2026 expansion
+
+The desktop training workflow now extends through five sensor-led cases, constrained seed variation, degraded sensor tiers, Levels 0–4, profile progression, durable review/checkpoints, validated bundle transfer, and a licensed command room. Rural/semi-urban and clear/fog/rain settings are connected. The seated WebXR adapter is implemented for the selected PC VR / Chrome/Edge / OpenXR target; hardware acceptance is pending.
+
+The phase requirements below remain the product acceptance criteria. Remaining gaps include physical bird-group visuals, fully procedural RF/authorization populations, independent simulated IR, optional standing/teleport/snap-turn, and real-headset comfort/performance verification. Current templates vary seeded routes and sensor delivery rather than generating arbitrary battlefield populations. See VERIFICATION.md for evidence; these gaps prevent claiming the entire roadmap complete.
+
 **Authority:** [PRD v4](PRD.md) defines product behaviour; [architecture](ARCHITECTURE.md) defines the current runtime and integration contracts. This roadmap builds on the delivered three regional worlds and shared instructor session. Phases are delivery gates, not claims that future work has already shipped.
 
 ## Delivery order and completion policy

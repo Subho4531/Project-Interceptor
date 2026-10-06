@@ -1,6 +1,6 @@
 # Project Interceptor
 
-Three regional border training environments, an instructor dashboard, and the first sensor-led trainee exercise are implemented. The [revised PRD](docs/PRD.md) and [implementation roadmap](docs/IMPLEMENTATION_PLAN.md) define the broader training loop. Competency progression, a command-room interior, and VR remain planned work.
+Three regional training posts now share a sensor-led exercise system, instructor dashboard, curriculum, saved reviews, and an imported command room. A seated WebXR adapter targets PC VR through Chrome/Edge and OpenXR; real headset acceptance remains pending. The [PRD](docs/PRD.md) and [implementation roadmap](docs/IMPLEMENTATION_PLAN.md) retain the full product requirements.
 
 ## Run locally
 
@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Open `/trainer` for the sensor-led Basic Detection exercise, `/observer` for the ground-level 3D view, or `/dashboard` for the instructor map. Completed exercise replays open at `/aar/:sessionId`.
+Open `/` or `/progress` for profiles, Levels 0–4, and history. `/trainer` provides focused sensor controls; `/room` provides spatial command-room controls and PC VR entry. `/observer` opens the ground-level 3D view and `/dashboard` the instructor sensor wall/map. Reviews open at `/aar/:sessionId`.
 
 `npm run dev:dashboard` launches the development server and opens the dashboard directly. Its default sensor wall shows radar returns, a live EO camera, synthetic thermal visualization and sensor/RF status; use **Tactical map** to switch to the geographic map. The thermal view colourizes the optical render and is not an independent infrared measurement.
 
@@ -33,7 +33,11 @@ WASD moves, mouse looks, Shift walks briskly, Z zooms, E/Space marks a contact, 
 
 Settings select the post, exercise, day/night, visibility and rendering quality. Default: Shakti, low-altitude ingress, 25-second quiet period, daytime, clear visibility. Existing FPV, Orlan, Lancet and Geranium models remain available for four fictional exercise families and familiarisation. They are imported Sketchfab representations; the original cooked Unreal model export remains a separate blocked pipeline.
 
-The `/trainer` exercise delivers a delayed neutral radar cue, acknowledgment timing, EO/RF/flight-roster/movement evidence requests, qualitative analysis support, separate object/coordination/affiliation/threat assessments, high-level decisions, a scheduled simulated consequence, weighted scoring, and an AAR. Completed practice attempts are saved in the browser's IndexedDB and can be replayed or exported as JSON. The trainee view withholds scenario truth until the AAR. This is one authored Basic Detection exercise; the ambiguous-target and swarm exercises, procedural variation, cross-session competency tracking, 3D command room, and VR remain on the roadmap. The simulated response is a command-level outcome, without interceptor physics.
+Exercises include Basic Detection, uncertain sensor returns, authorization review, independent contacts, and coordinated activity. Neutral radar cues lead to acknowledgement, EO/RF/roster/history investigation, qualitative evidence analysis, separate classification and threat assessment, high-level decisions, consequences, and weighted scoring. Seeded routes and degraded sensors vary the workload. False returns are sensor-only; no bird model is implied.
+
+Guided practice and practice remain open at every level. Assessments unlock through two distinct-seed qualifying attempts (80 overall, 60 per component, no critical error). Interrupted, demo, instructor-viewed and aborted attempts cannot unlock competency. Level 0 is familiarisation. IndexedDB stores profiles, delivered evidence, revisions, chronology, checkpoints and final explanations; `/progress` exports/imports validated JSON bundles. Reloaded incomplete attempts are held for review, not resumed.
+
+The command room uses imported Kenney CC0 furniture modules and shares the same clock, evidence and actions as the focused console. Desktop pointer and WebXR controller rays operate its panels. Connect a PC headset to its OpenXR runtime and use a trusted localhost/HTTPS context for immersive entry. No headset performance, comfort or controller acceptance is claimed without hardware testing. The simulated response remains a command-level outcome, without interceptor physics.
 
 ## Build and checks
 
@@ -45,9 +49,9 @@ node tools/serve-static.mjs
 node tools/sensor-smoke.mjs # while the static server is running
 ```
 
-Deploy dist/ to a static host with `/trainer`, `/observer`, `/dashboard`, and `/aar/:sessionId` rewritten to index.html. The included server supports TRAINER_PORT and TRAINER_BASE_PATH. Packaged 3D worlds require no rendering server or runtime Sketchfab login.
+Deploy dist/ to a static host with `/progress`, `/room`, `/trainer`, `/observer`, `/dashboard`, and `/aar/:sessionId` rewritten to index.html. The included server supports TRAINER_PORT and TRAINER_BASE_PATH. Packaged 3D worlds require no rendering server or runtime Sketchfab login.
 
-The first sensor-led exercise is covered by engine unit tests and a Chrome browser smoke test at 1280 x 720. See [verification record](VERIFICATION.md) for current results and limits. The broader Chrome/Edge performance suite is available through `npm run qa` but is not claimed complete.
+See [verification record](VERIFICATION.md) for current automated checks, browser results and remaining acceptance limits. Additional browser flows run with `tools/scenario-smoke.mjs` and `tools/curriculum-smoke.mjs` against a running static build.
 
 ## Assets and evidence
 

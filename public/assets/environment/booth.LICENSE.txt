@@ -1,0 +1,4 @@
+booth by claudio (@Claudio12345)
+https://sketchfab.com/3d-models/security-booth-cabina-de-seguridad-b15e6647ee434bcea57b2d965d3a1b30
+CC-BY-4.0: https://creativecommons.org/licenses/by/4.0/
+Modified: Source geometry/materials imported; centred horizontally; bottom aligned to0; uniformly scaled to authored training dimensions; glTF Transform dedup/weld/prune

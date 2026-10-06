@@ -1,0 +1,35 @@
+{
+  "name": "booth",
+  "sourceUrl": "https://sketchfab.com/3d-models/security-booth-cabina-de-seguridad-b15e6647ee434bcea57b2d965d3a1b30",
+  "author": "claudio (@Claudio12345)",
+  "license": "CC-BY-4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "uid": "b15e6647ee434bcea57b2d965d3a1b30",
+  "downloadMethod": "Authenticated Chrome UI",
+  "requestedTextureResolution": "1k",
+  "sourceSha256": "26c2c34685bc8d3fe185e8c50729226bdcb678cd4080e5fb36f13a945ee1e210",
+  "outputSha256": "a7726884c37d5a511d7af9096e90381458ade20c4ec76f710efc81e8f9d1b010",
+  "sourceBounds": {
+    "min": [
+      -5.85267541015625,
+      -0.4058817686691101,
+      -1.8638058598693104
+    ],
+    "max": [
+      3.8756583300781253,
+      3.8694574607314216,
+      1.8638058469616947
+    ]
+  },
+  "normalizationScale": 0.8223402088801348,
+  "dimensions": {
+    "x": 8,
+    "y": 3.5157833549386677,
+    "z": 3.0653649896194444
+  },
+  "modifications": [
+    "Source geometry/materials imported; centred horizontally; bottom aligned to0; uniformly scaled to authored training dimensions",
+    "glTF Transform dedup/weld/prune"
+  ],
+  "bytes": 9842796
+}

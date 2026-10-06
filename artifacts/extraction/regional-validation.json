@@ -1,0 +1,38 @@
+[
+  {
+    "id": "shakti-punjab",
+    "vertices": 90601,
+    "triangles": 180000,
+    "maxHeightErrorMeters": 4.730224603122224e-7,
+    "maxHorizontalErrorMeters": 0,
+    "maxCornerAlignmentErrorMeters": 0.0009414906844958768,
+    "platformSamples": 49,
+    "imagerySceneId": "S2A_T43RDQ_20241013T054552_L2A",
+    "regionalMaskedFraction": 0,
+    "allPassed": true
+  },
+  {
+    "id": "maru-rajasthan",
+    "vertices": 90601,
+    "triangles": 180000,
+    "maxHeightErrorMeters": 0.0000018920898412488896,
+    "maxHorizontalErrorMeters": 0,
+    "maxCornerAlignmentErrorMeters": 0.0009422108733719397,
+    "platformSamples": 49,
+    "imagerySceneId": "S2B_T42RXR_20250323T061051_L2A",
+    "regionalMaskedFraction": 0,
+    "allPassed": true
+  },
+  {
+    "id": "himadri-sikkim",
+    "vertices": 90601,
+    "triangles": 180000,
+    "maxHeightErrorMeters": 0.000030273437459982233,
+    "maxHorizontalErrorMeters": 0,
+    "maxCornerAlignmentErrorMeters": 0.0009422845019016604,
+    "platformSamples": 49,
+    "imagerySceneId": "S2B_T45RXL_20230109T044620_L2A",
+    "regionalMaskedFraction": 0,
+    "allPassed": true
+  }
+]

@@ -1,0 +1,27 @@
+{
+  "sourceChannels": [
+    {
+      "channel": "Diffuse",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/shrub_03/shrub_03_diff_1k.png",
+      "md5": "46b126a5a126c83b434e129ba20c73e5",
+      "sha256": "e4bcfd373b67f4bfecea93f2b3f2b51139438b09425983a665b61c78b24dfd5e",
+      "license": "CC0-1.0"
+    },
+    {
+      "channel": "Alpha",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/shrub_03/shrub_03_alpha_1k.png",
+      "md5": "57a2d0fd7ea02ebeb8de321652f9f58a",
+      "sha256": "daef00278879a024fd05216aaa1376067a5f25f1b911d08d9bbdc50fda4a0d66",
+      "license": "CC0-1.0"
+    }
+  ],
+  "modification": "Packed original source opacity into diffuse PNG alpha; material MASK cutoff0.4",
+  "outputSha256": "92837b77686487c3e4da6d6708a9390cfa69151e0332b92f65ecb59695a743e2",
+  "outputFile": "source-diffuse-rgba.png",
+  "statistics": {
+    "transparentFraction": 0.7372665405273438,
+    "solidFraction": 0.26273345947265625,
+    "minAlpha": 0,
+    "maxAlpha": 255
+  }
+}

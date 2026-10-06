@@ -1,0 +1,4 @@
+barrier by Poly Haven contributors
+https://polyhaven.com/a/concrete_road_barrier
+CC0-1.0: https://polyhaven.com/license
+Modified: Source geometry/materials imported; centred horizontally; bottom aligned to0; uniformly scaled to authored training dimensions; glTF Transform dedup/weld/prune; Meshoptimizer 7.5% target, error .001

@@ -1,0 +1,4 @@
+fence by Poly Haven contributors
+https://polyhaven.com/a/modular_chainlink_fence
+CC0-1.0: https://polyhaven.com/license
+Modified: Source geometry/materials imported; centred horizontally; bottom aligned to0; uniformly scaled to authored training dimensions; glTF Transform dedup/weld/prune; Meshoptimizer 50% target, error .001; Packed genuine source wire opacity PNG into diffuse RGBA PNG, MASK cutoff0.4; Flattened and joined by material to reduce repeated fence draw calls

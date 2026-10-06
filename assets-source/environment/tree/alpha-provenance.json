@@ -1,0 +1,27 @@
+{
+  "sourceChannels": [
+    {
+      "channel": "leaves_diff",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/tree_small_02/tree_small_02_leaves_diff_1k.png",
+      "md5": "2c667193084725e8553062ddbdc73c7d",
+      "sha256": "d3fc48522c76aa1f91076c6b86f302669822ebe4e2acabd67d42c4d57eaa5ba0",
+      "license": "CC0-1.0"
+    },
+    {
+      "channel": "leaves_alpha",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/tree_small_02/tree_small_02_leaves_alpha_1k.png",
+      "md5": "63199ba87a9e8928424bd8c3b8017bd0",
+      "sha256": "4f143e2dda8a6a572f427ac378b92255d21761e4611de0d26e21816c01aa533b",
+      "license": "CC0-1.0"
+    }
+  ],
+  "modification": "Packed original source opacity into diffuse PNG alpha; material MASK cutoff0.4",
+  "outputSha256": "ef6aef8caaee1d86887a111d1bd89b0359352bf9015159f4605774619eca89cc",
+  "outputFile": "source-diffuse-rgba.png",
+  "statistics": {
+    "transparentFraction": 0.3686208724975586,
+    "solidFraction": 0.6313791275024414,
+    "minAlpha": 0,
+    "maxAlpha": 255
+  }
+}

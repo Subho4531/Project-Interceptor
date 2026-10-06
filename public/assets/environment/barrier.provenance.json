@@ -1,0 +1,33 @@
+{
+  "name": "barrier",
+  "sourceUrl": "https://polyhaven.com/a/concrete_road_barrier",
+  "author": "Poly Haven contributors",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://polyhaven.com/license",
+  "sourceSha256": "c371e87d303fff3f0c9fbe88520f7837514364e5c66aac3244e115ffa673d061",
+  "outputSha256": "f8a458b94eed68e2fca9221e12484fb08c243e38000f4f4eed3d2dec15e83de9",
+  "sourceBounds": {
+    "min": [
+      -0.774623453617096,
+      -0.008429879322648048,
+      -0.2947474718093872
+    ],
+    "max": [
+      0.7707335948944092,
+      0.8226187229156494,
+      0.3439931571483612
+    ]
+  },
+  "normalizationScale": 1.9412989398725773,
+  "dimensions": {
+    "x": 3,
+    "y": 1.613313770507794,
+    "z": 1.2399865058492203
+  },
+  "modifications": [
+    "Source geometry/materials imported; centred horizontally; bottom aligned to0; uniformly scaled to authored training dimensions",
+    "glTF Transform dedup/weld/prune",
+    "Meshoptimizer 7.5% target, error .001"
+  ],
+  "bytes": 2540000
+}

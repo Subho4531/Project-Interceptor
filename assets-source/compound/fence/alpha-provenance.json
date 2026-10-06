@@ -1,0 +1,27 @@
+{
+  "sourceChannels": [
+    {
+      "channel": "wire_diff",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/modular_chainlink_fence/modular_chainlink_fence_wire_diff_1k.png",
+      "md5": "c61cb853b712031ddbb60ea6196684c0",
+      "sha256": "4769cd159ec7475c57b05ef94db4d7152a12432b650d04ee2fb47bbcbfe37525",
+      "license": "CC0-1.0"
+    },
+    {
+      "channel": "wire_alpha",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/modular_chainlink_fence/modular_chainlink_fence_wire_alpha_1k.png",
+      "md5": "60de816363ee08a40d88a2db5aac4c9c",
+      "sha256": "92ea700345a61f78fdbc3d4ff2ba4ea580f7fdfa167b3963b1167e9aaba88255",
+      "license": "CC0-1.0"
+    }
+  ],
+  "modification": "Packed original source opacity into diffuse PNG alpha; material MASK cutoff0.4",
+  "outputSha256": "e8c21e71c72e5075e7c21a5ed8a2093ddccb44ae329cb383547964a3e3a9f375",
+  "outputFile": "source-diffuse-rgba.png",
+  "statistics": {
+    "transparentFraction": 0.7906093597412109,
+    "solidFraction": 0.20939064025878906,
+    "minAlpha": 0,
+    "maxAlpha": 255
+  }
+}

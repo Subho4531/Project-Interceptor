@@ -1,0 +1,35 @@
+{
+  "name": "fence",
+  "sourceUrl": "https://polyhaven.com/a/modular_chainlink_fence",
+  "author": "Poly Haven contributors",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://polyhaven.com/license",
+  "sourceSha256": "4204f151f809b4abd41ea0b18b1b6a5d9c23e6bcc0b6a81e44d03690f26604e9",
+  "outputSha256": "b3492ea3a9c9d89ff58d60af003901aee28d5fd3ac8168e73ada8f173b116ccc",
+  "sourceBounds": {
+    "min": [
+      -2.0747053176164627,
+      0,
+      -0.074705321341753
+    ],
+    "max": [
+      2.0747053176164627,
+      2.5229129791259766,
+      0.074705321341753
+    ]
+  },
+  "normalizationScale": 0.9639923236412734,
+  "dimensions": {
+    "x": 4,
+    "y": 2.4320687450923777,
+    "z": 0.14403071261720898
+  },
+  "modifications": [
+    "Source geometry/materials imported; centred horizontally; bottom aligned to0; uniformly scaled to authored training dimensions",
+    "glTF Transform dedup/weld/prune",
+    "Meshoptimizer 50% target, error .001",
+    "Packed genuine source wire opacity PNG into diffuse RGBA PNG, MASK cutoff0.4",
+    "Flattened and joined by material to reduce repeated fence draw calls"
+  ],
+  "bytes": 4315640
+}

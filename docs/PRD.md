@@ -1,156 +1,132 @@
-# Product Requirements Document (PRD)
+# Project Interceptor — Product Requirements Document
 
-## Project Title
-**AI-Enabled Drone & Counter-Drone Threat Simulation Trainer**  
-**Problem Statement ID**: SIH26247 (Ministry of Defence — MoD)  
-**Project Codename**: Project Interceptor  
-**Engine & Target Platform**: PlayCanvas Engine (Standalone WebGL2/WebGPU) + React 19 / Tailwind CSS  
-**Visual Target**: Unreal Engine-Grade Realism in Browser (PBR Tactical Compound & Realistic Drone Flight)  
-**Document Version**: 3.0 (PlayCanvas Unreal-Fidelity Edition)
+**Version:** 4.0 · 6 October 2026
 
----
+**Requirement source:** SIH26247 text supplied by the project owner
 
-## Executive Summary & Product Goal
+**Delivery:** Offline capable desktop training first; immersive VR in a later milestone
 
-Build a high-fidelity, accessible 3D simulation platform to train defence personnel in recognizing, classifying, and responding to drone and swarm threats across varied and realistic tactical scenarios with minimal specialized hardware.
+**Current stack:** React 19, TypeScript, Vite, Babylon.js, WebGL2, MapLibre
 
-Using the **PlayCanvas WebGL2/WebGPU Engine** paired with a React/Tailwind tactical overlay, the simulator delivers **Unreal Engine-grade visual realism** directly in the browser with zero multi-gigabyte client installations:
-* **Real-World Tactical Environment**: PBR satellite-grade terrain, textured military/industrial structures, perimeter barriers, and physical sky atmospheric lighting.
-* **Realistic Drone Entity**: Physically proportioned quadcopter with animated multi-blade rotors, realistic aerodynamic flight profiles, and 3D positional acoustic signatures.
-* **Deterministic Training Loop**:
-$$\text{Scenario} \longrightarrow \text{Observation} \longrightarrow \text{Detection} \longrightarrow \text{Classification} \longrightarrow \text{Engagement Decision} \longrightarrow \text{Scoring} \longrightarrow \text{AAR}$$
+## Product goal
 
----
+Train personnel to notice unusual aerial activity, investigate incomplete sensor evidence, classify what they observe, assess risk separately, make proportionate high level decisions, and learn from an after action review (AAR). Classroom instruction and limited live fire drills do not provide affordable, repeatable exposure to single UAVs, benign activity, and coordinated groups across varied conditions.
 
-# 1. Problem Statement & Operational Context (SIH26247)
+The primary exercise is **briefing → sensor cue → acknowledgement → investigation → classification → threat assessment → decision sequence → consequence → AAR**. The trainee does not know in advance whether an observation represents a UAV, several independent UAVs, a coordinated group, a friendly flight, wildlife, a sensor false return, or an unresolved object. Finding a tiny model manually in the sky is not the required entry point.
 
-* **Operational Reality**: Small Unmanned Aerial Systems (sUAS) and swarms are a decisive battlefield factor. Conventional counter-drone training relies on classroom theory and rare, weather-dependent live-fire exercises that cannot scale.
-* **Unit-Level Requirement**: MoD requires a simulator usable at unit level with minimal specialized hardware.
-* **The PlayCanvas Advantage**: Delivers high-end forward+ clustered lighting, physical PBR materials, soft cascaded shadows, and 60+ FPS performance on standard laptops and desktops without requiring a 100GB desktop game engine install.
+This is a fictional training prototype. It does not model weapon operation, certify operational doctrine, use real sensor feeds, or reproduce real border installations.
 
----
+## Decisions and current baseline
 
-# 2. Phased Delivery Roadmap
+- Deliver one complete desktop loop first. VR is a separate later acceptance milestone.
+- Use guided practice with competency gated assessments. Keep practice open.
+- Store individual attempts on each device; exchange validated files to consolidate unit results. No cloud service is required.
+- Use deterministic, explainable local rules for sensor fusion and assistant output. Qualitative support is not calibrated ML probability.
+- Assessment time continues through reading panels and entering answers. Interruptions pause safely and invalidate progression eligibility.
+- Keep the Babylon.js runtime, fixed simulation step, shared session, instructor dashboard, and three existing environments. Older PlayCanvas specifications are superseded.
 
-```mermaid
-flowchart LR
-    P1["Phase 1: PlayCanvas MVP Core Loop<br/>• Real-World PBR Tactical Compound<br/>• Single Drone Realistic Flight Spline<br/>• Day/Night Physical Sky Lighting<br/>• Free-Roam FPS Patrol + 3x Optical Zoom<br/>• Deterministic Decision-Tree Scoring<br/>• Interactive AAR Timeline"] 
-    --> P2["Phase 2: Tactical Swarms & Profiles<br/>• Multi-Drone Swarm Formations (3-10)<br/>• Degraded Sensors (Noise/EMI/Clutter)<br/>• Difficulty Tiers (Recruit/Operator/Spec)<br/>• Trainee Profiles & IndexedDB History<br/>• Comparative AAR Dashboard"]
-    --> P3["Phase 3: AI & WebXR<br/>• Procedural Threat Corridor Engine<br/>• Dense Urban Tactical Compound<br/>• WebXR / VR Headset Training Mode<br/>• Squad / Unit Aggregated Analytics<br/>• LLM-Powered Tactical Debrief Notes"]
-```
+The implemented posts are Shakti/Punjab, Maru/Rajasthan, and Himadri/Sikkim. They have locally packaged regional terrain, compound assets, aircraft models, collisions, licenses, and provenance. The existing outdoor observer, four authored flight exercises, radar/EO observations, map dashboard, and basic review remain available. The current classification combines identity and concern, and the review counts matches; the new scoring and full AAR are future requirements until implemented.
 
----
+## Audience, modes, and navigation
 
-# 3. Core Training Loop & User Flow
+The trainee selects a local profile, enters practice or an unlocked assessment, receives a neutral briefing, investigates, and reviews results. The instructor configures post, level, seed, sensors, and mode; monitors the same simulation; and can inspect authored truth. Local role separation protects the exercise interface but is not tamper resistant examination security. Opening instructor truth during an assessment marks it ineligible for progression.
 
-```mermaid
-flowchart TD
-    Launch["1. Launch Web Application"] --> Briefing["2. Tactical Briefing & Scenario Setup<br/>(Terrain, Lighting, Difficulty)"]
-    Briefing --> InitPlayCanvas["3. Initialize PlayCanvas Engine & Telemetry Bus"]
-    InitPlayCanvas --> EnterCompound["4. Enter PBR Tactical Compound<br/>(Free-Roam FPS Patrol Mode)"]
-    EnterCompound --> ThreatSpawns["5. Threat Drone Spawns on Incursion Vector"]
-    ThreatSpawns --> ScanAirspace["6. Trainee Patrols & Scans Airspace"]
-    ScanAirspace --> MarkDetect["7. Trainee Marks Detection (Spacebar / HUD Button)"]
-    MarkDetect --> Classify["8. Trainee Submits Target Classification"]
-    Classify --> Engage["9. Trainee Selects SOP Engagement Decision"]
-    Engage --> EndSim["10. Scenario Concludes (Exit or Timeout)"]
-    EndSim --> CalcScore["11. Decision-Tree Scoring Engine Evaluates Run"]
-    CalcScore --> AAR["12. After-Action Review (AAR) Dashboard & Timeline"]
-```
+| Route | Purpose |
+| --- | --- |
+| `/` | Profile, curriculum, progression, recent attempts |
+| `/trainer` | Main sensor led trainee experience |
+| `/dashboard` | Existing instructor console and truth view |
+| `/aar/:sessionId` | Completed attempt, scores, read only replay |
+| `/progress` | Individual and imported unit trends |
 
----
+Preserve direct route loads, static hosting, and subdirectory deployments. Keep outdoor observation as a supplementary familiarisation and evidence view. Rendering can use private truth, but trainee panels and assistant inputs must receive only a trainee projection.
 
-# 4. Realistic 3D Environment & Assets
+**Practice** permits pause and optional hints. **Assessment** runs at 1×, locks configuration, removes hints, and keeps time moving while panels are open. **Instructor demo** permits override without awarding competency. Hidden tabs, renderer loss, or interruption pause the clock, record the interruption, and prevent that attempt from unlocking a level.
 
-### 4.1 Real-World Tactical Compound
-* **Terrain**: Satellite-grade high-resolution terrain with physical PBR materials (macro/micro ground textures, packed dirt access roads, concrete patrol pads).
-* **Structures**: Detailed industrial warehouse buildings, observation watchtowers, security gates, chain-link and concrete perimeter fences, and utility poles providing natural line-of-sight occlusion.
-* **Foliage & Props**: Trees, brush, perimeter barricades, and shipping containers that create tactical blind spots and realistic threat masks.
+## Scenario specification
 
-### 4.2 Lighting & Atmospheric Realism
-* **Clustered Forward Lighting**: Soft cascaded directional shadows from high-altitude sunlight/moonlight.
-* **Physical Sky & Atmosphere**: Realistic Rayleigh/Mie atmospheric scattering with seamless Day/Night transitions.
-* **PBR Shaders**: Metallic-roughness workflow with prefiltered specular environment maps (IBL) for metallic drone surfaces and matte industrial concrete.
+Separate **environment** (post, terrain, protected zone, lighting, weather, visibility), **situation** (population, authorization, behaviour, schedules, sensor state), and **exercise** (learning objective, difficulty, rubric, evidence opportunities, completion).
 
----
+| Dimension | Required values |
+| --- | --- |
+| Setting | Existing rural, desert, mountain posts; fictional semi urban compound later |
+| Conditions | Day/night; clear/fog; rain in the advanced environment milestone |
+| Population | Single UAV, independent UAVs, coordinated group, friendly UAV, birds, sensor only false return |
+| Behaviour | Passing, approaching, loitering, turning, departing |
+| Sensors | Normal, delayed, noisy, intermittent, unavailable |
+| Difficulty | Foundation, intermediate, advanced |
+| Source | Authored showcase or constrained seeded variant |
 
-# 5. Trainee Mechanics (Patrol Observer)
+“Unknown” describes what the trainee can infer, not an absence of internal scenario truth. A recognizable airframe does not automatically establish affiliation or hostility. Track count need not equal entity count: returns may split, merge, coast, disappear, or be reacquired.
 
-* **Locomotion**: Free-roam First-Person Controls with ground collision raycast against the PBR terrain (eye height locked at $1.75\text{m}$).
-* **Look / Aim**: Smooth mouse pitch/yaw via browser Pointer Lock.
-* **Optical Zoom**: Smooth $3\times$ optical binocular zoom (`Right-Click` or `Shift`) interpolating camera FOV from $75^\circ$ down to $25^\circ$ with tactical reticle and vignette overlay.
-* **Mark Detection**: `Spacebar` or primary HUD trigger button.
-* **Classification & Decision**: Tactical hotkeys (`1-4`, `C`, `E`) or mouse-accessible modal buttons.
+Generation uses independent seeded streams for population, behaviour/routes, sensors, and weather. Before starting, validate terrain clearance, protected zone relationships, modeled sensor coverage, usable evidence, and sufficient response time. Reject invalid combinations. After bounded retries, use a packaged valid fallback and record it. “Repeat” preserves the resolved configuration and seed; “New variant” changes the seed. Rendering quality never changes the situation. Sensor ranges are fictional training parameters rather than equipment claims.
 
----
+The four first authored situations are:
 
-# 6. Drone Entity Simulation & Kinematics
+1. **Basic detection:** daytime single contact, functioning sensors; acknowledge, verify, classify, assess, report.
+2. **Ambiguous activity:** night and reduced visibility, weak returns, no decisive RF, later non UAV evidence; preserve uncertainty and avoid unnecessary escalation.
+3. **Coordinated incident:** converging contacts with degraded evidence; compare history, recognize coordination, assess urgency, alert/report, request authorization, and request an abstract response if granted.
+4. **Friendly flight:** UAV and matching fictional authorization record; verify and avoid treating every UAV as a threat.
 
-* **3D Model**: High-detail military/commercial quadcopter GLB asset with spinning 4-blade carbon-fiber rotors, payload sensor gimbal, and status LED strobe.
-* **Aerodynamic Kinematics**:
-  * 3D spline waypoint traversal with natural banking and pitch along turn curves.
-  * Configurable tactical velocity ($10 - 25\text{ m/s}$) and altitude ($15 - 60\text{m AGL}$).
-  * Realistic positional audio with distance attenuation curves simulating high-pitch motor propeller hum.
-* **Flight Profiles**: Ingress along low-altitude terrain contours, high-altitude surveillance passes, and aggressive compound perimeter penetrations.
+Showcase names and expected outcomes are instructor facing. Trainee briefings show neutral exercise codes and objectives. Existing low ingress, surveillance, penetration, and swarm flight exercises become legacy familiarisation patterns; the supplied problem statement does not define these as its exact four categories.
 
----
+## Trainee workspace and evidence
 
-# 7. Ground-Truth Visibility Detection
+The first complete desktop release has a tactical map and observed histories, radar, EO cueing/view, RF observations, fictional flight authorization lookup, selected contact investigation, classification and threat assessment, decisions/alerts, sensor health, local analysis assistant, and ordered event feed. Then add an imported reusable 3D command room with wall map, radar, EO/IR, RF, and operator station. Focused readable panels remain available. Outdoor visual observation adds evidence but is not mandatory for detection.
 
-Ground-truth observation is evaluated continuously by `VisibilityProbe`:
-1. **Frustum Containment**: Target coordinates verified inside active camera view frustum (`pc.Frustum`).
-2. **Angular Subtense ($\theta$) Threshold**:
-   $$\theta = \left(\frac{d}{R}\right) \cdot \left(\frac{180}{\pi}\right) \ge 0.05^\circ$$
-   Where $d = 0.5\text{m}$ (physical drone wingspan) and $R$ is range in meters.
-3. **Multi-Point Raycast Occlusion**: Three independent raycast checks (chassis center, top rotor plane, battery/payload) against compound buildings, fences, and terrain colliders.
-4. **Telemetry Events**:
-   * Ground Truth: `DRONE_VISIBLE` at $t_{\text{visible}}$
-   * Trainee Action: `PLAYER_DETECTION` at $t_{\text{detect}}$
-   * Detection Latency: $\Delta t_{\text{detect}} = t_{\text{detect}} - t_{\text{visible}}$
+Each evidence item records source, capture time, delivery time, age, measured values, uncertainty, quality, and availability. Store distinct timestamps for object introduction, first qualifying evidence delivered to the trainee, acknowledgement, investigation request/return, assessment revisions, decisions, and consequences. **Scored detection latency begins at first qualifying delivered evidence**, not hidden spawn time. Spawn to acknowledgement is a separate AAR diagnostic.
 
----
+Acknowledging a displayed track creates a neutral contact report. Investigation can cue EO from measured position, request RF, inspect measured movement, query a fictional roster, compare related tracks, and request verification. Requests consume configured simulation time. EO can fail through occlusion or poor visibility. RF silence and a missing roster match do not independently prove threat. Automatic EO following depends on continued acquisition rather than hidden truth.
 
-# 8. Threat Classification & Engagement Decision
+The assessment records four independent fields:
 
-### 8.1 4-Tier Threat Classification
-1. `Benign / Permitted` (Friendly scout, authorized logistics quadcopter)
-2. `Unknown` (Unidentified aerial object requiring persistent track)
-3. `Potential Concern` (Suspicious commercial drone, unauthorized reconnaissance)
-4. `Simulated Threat` (Hostile FPV kamikaze drone, armed payload carrier)
+| Field | Values |
+| --- | --- |
+| Object type | UAV, non UAV, unknown |
+| Coordination | Single, multiple independent, coordinated group/swarm, unknown |
+| Affiliation | Authorized/friendly, confirmed unauthorized, unconfirmed |
+| Threat level | Low, medium, high, critical |
 
-### 8.2 4-Tier SOP Engagement Decision
-1. `Continue Observation` (Maintain visual contact, log bearing/elevation)
-2. `Request Additional Information` (Cross-check with radar grid / Air Defense Net)
-3. `Escalate / Report` (Issue base warning, scramble counter-UAS team)
-4. `Initiate Simulated Response` (Deploy directional RF jammer / Kinetic intercept)
+The UI may summarize “friendly UAV” or “possible swarm,” but stores the fields separately. Assessment revisions remain in event history. A later correction does not erase an earlier action. “Unknown” can earn credit when evidence is insufficient. Threat level depends on behaviour, proximity, authorization, and available evidence, separately from aircraft type.
 
----
+## Assistant, decisions, and consequences
 
-# 9. Deterministic Decision-Tree Scoring Engine
+The offline rule based assistant consumes only trainee visible evidence. It explains ranked hypotheses, supporting and conflicting observations, evidence age, limitations, and missing information. Guided practice can suggest investigation steps. Assessment removes coaching and expected actions and logs assistant use. Show qualitative support, not invented percentages. The assistant cannot submit an answer or command a response.
 
-The overall performance score is 100% mathematical:
+Available high level actions: continue monitoring; request verification; raise local alert; report to command; mark suspected threat; request authorization; initiate an authorized simulated response. A configurable decision graph accepts more than one valid action order. The exercise authorization rule returns pending, granted, or denied; the trainee cannot grant their own request. Actions schedule observable results: new evidence, acknowledgement, alert state, abstract response outcome, or continued flight and possible fictional zone crossing. A target does not disappear just because a response control was pressed.
 
-$$\text{Final Score} = 0.30 \times S_{\text{detect}} + 0.30 \times S_{\text{class}} + 0.30 \times S_{\text{decision}} + 0.10 \times S_{\text{speed}}$$
+## Curriculum and progression
 
-* **Detection Score ($30\%$)**: Linear decay against threshold window $T_{\max} \in [6\text{s}, 15\text{s}]$ based on difficulty tier:
-  $$S_{\text{detect}} = \max\left(0, 100 \times \left(1.0 - \frac{\Delta t_{\text{detect}}}{T_{\max}}\right)\right)$$
-* **Classification Accuracy ($30\%$)**:
-  * Exact SOP Match: **100 pts**
-  * Adjacent Cautious Classification: **60 pts**
-  * Unknown / Hesitant: **30 pts**
-  * False Negative / Misidentification: **0 pts**
-* **Engagement Decision Quality ($30\%$)**:
-  * Authorized SOP Response: **100 pts**
-  * Sub-optimal Precaution: **50 pts**
-  * Reckless Over-escalation or Negligent Inaction: **0 - 20 pts**
-* **Response Speed ($10\%$)**:
-  $$S_{\text{speed}} = \max\left(0, 100 \times \left(1.0 - \frac{t_{\text{response}} - t_{\text{detect}}}{15.0}\right)\right)$$
+| Level | Competency | Exercise shape |
+| --- | --- | --- |
+| 0 Familiarisation | Controls, evidence age, reports | Guided unscored walkthrough |
+| 1 Detection and verification | Notice/investigate one contact | Strong daytime evidence |
+| 2 Ambiguity and restraint | Friendly flight, wildlife, uncertainty | Incomplete/conflicting evidence |
+| 3 Prioritisation | Multiple contacts and revisions | Mixed benign and concerning activity |
+| 4 Coordinated incident | Coordination under degradation | Multiple contacts, partial sensor loss |
 
----
+Every level has guided practice, unassisted practice, and assessment. Unlock the next level after **two assessments on distinct seeds** scoring **at least 80 overall and 60 in each component**, with **no critical decision error**, under the current rubric version. Practice is always available. Interrupted, aborted, instructor modified, demo, and legacy attempts remain in history but do not unlock progression. Instructor demo override does not award competency.
 
-# 10. Technical Architecture
+Difficulty changes information quality and workload, not merely object count. Foundation gives timely clear evidence. Intermediate delays and weakens evidence. Advanced combines clutter, benign objects, conflict, and outages. Every generated assessment remains solvable.
 
-* **3D Runtime**: **PlayCanvas Engine** (`playcanvas` standalone npm library) utilizing WebGL2 with WebGPU readiness.
-* **Frontend UI Layer**: **React 19 + Tailwind CSS v4** rendering a military tactical HUD overlay on top of the PlayCanvas canvas.
-* **Simulation Core**: Pure TypeScript (`src/simulation/`) headless state machine, kinematics, telemetry bus, and scoring engine.
-* **Hardware Requirement**: Runs smoothly at 60+ FPS on standard laptops with integrated graphics (Intel Iris Xe, AMD Radeon) and dedicated GPUs.
+## Scoring and AAR
+
+**Overall = 25% detection + 30% classification + 20% threat assessment + 25% decision quality.** These are versioned prototype defaults requiring subject matter review before operational adoption.
+
+- Detection: 100 within five simulation seconds of first qualifying delivered cue; linear decay to zero by 60 seconds. An exercise that never delivers required evidence is invalid, not a trainee miss.
+- Classification: object type, coordination, affiliation contribute 50/30/20 within the component. The evidence stage rubric may accept unknown.
+- Threat assessment: 100 for an accepted evidence supported level, 50 for a rubric approved adjacent level, else zero.
+- Decision quality: verification 30, proportionate action 40, follow through 30. The decision graph supplies valid paths at evidence milestones.
+- An unauthorized simulated response yields zero decision quality and fails assessment competency; retain its diagnostic overall score.
+
+Average applicable **learning objective** scores before weights. One group does not outweigh the curriculum simply because it contains more aircraft. Do not subtract a second overall penalty for an error already scored in a component. Rubrics can accept cautious uncertainty and alternative action order. Store rubric version and explanation.
+
+AAR shows component scores/reasons; introduction, first evidence, acknowledgement and latency; missed objectives and unnecessary actions; evidence available at each revision and decision; authorization and consequences; zone events; ground truth after completion; and targeted practice advice. Replay switches between the trainee’s historical knowledge and instructor truth without affecting a live session. Keep individual trends and imported unit aggregates separated by level and rubric version.
+
+## Release and acceptance
+
+Core training must run from a locally hosted static build with packaged assets, fonts, and regional imagery, without online basemaps, cloud accounts, or remote AI. Retain all asset attribution and license conditions. Verify Chrome and Edge at 1280×720 and 1920×1080. Target at least 30 FPS at 1280×720 on the previously recorded Ryzen 5 5600H/Radeon integrated graphics system; publish measured settings, scenario, and frame times rather than assuming the target is met.
+
+Accept only when: one desktop exercise runs briefing to AAR; trainee projections reveal no hidden/future truth; radar/EO/RF uncertainty and benign cases work; decisions cause recorded outcomes; scoring/replay reproduce from seed, evidence and actions; qualifying progression rules hold; local attempts survive reload/export/import; all three posts retain collision/map alignment; repeated resets do not leak entities/listeners/resources; and offline/browser/performance results are documented.
+
+The later Babylon.js WebXR adapter reuses the same scenarios, commands, scores, and persistence. It provides seated controller ray interaction, readable panels, safe pause/exit, optional standing/teleport/snap turn, and desktop fallback. Real headset interaction, comfort, and frame rate checks are required before claiming VR support. A headset accessing a different device needs a trusted HTTPS setup.

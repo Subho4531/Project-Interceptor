@@ -1,148 +1,93 @@
-# Implementation Plan & Multi-Phase Roadmap (PlayCanvas WebGL Architecture)
+# Project Interceptor — Implementation Roadmap
 
-## Project: AI-Enabled Drone & Counter-Drone Threat Simulation Trainer (Project Interceptor)
-**Engine & Stack**: PlayCanvas Engine (`playcanvas` standalone npm), React 19, TypeScript, Vite, Tailwind CSS v4, Zustand.
+**Version:** 4.0 · 6 October 2026
 
----
+**Authority:** [PRD v4](PRD.md) defines product behaviour; [architecture](ARCHITECTURE.md) defines the current runtime and integration contracts. This roadmap builds on the delivered three regional worlds and shared instructor session. Phases are delivery gates, not claims that future work has already shipped.
 
-## 🗺️ Multi-Phase Strategic Overview
+## Delivery order and completion policy
 
-```
-Phase 1: PlayCanvas MVP Core Simulation Loop (Sprints 1 – 5)  ◄ CURRENT ACTIVE SPRINT
-├── PlayCanvas WebGL2/WebGPU engine running at 60+ FPS in desktop browser
-├── Unreal Engine-grade visual realism (Clustered PBR lighting, soft shadows, physical sky)
-├── Real-world tactical compound (PBR terrain, warehouse, perimeter fences, watchtowers)
-├── Day / Night atmospheric lighting presets
-├── Free-roam FPS patrol observer with 3x optical binocular zoom & ground collision
-├── Single-drone Catmull-Rom 3D spline flight with animated rotors & 3D positional audio
-├── Microsecond ground-truth visibility probe (pc.Frustum + raycasting + angular subtense)
-├── Tactical HUD overlay (Compass tape, reticle, Mark Detection Spacebar trigger)
-├── 4-tier classification & SOP engagement decision modals
-├── Deterministic decision-tree scoring engine (100% mathematical)
-└── Results screen with interactive horizontal AAR event timeline
+Implement **documentation alignment → one complete sensor led desktop exercise → ambiguity and procedural variants → progression and history → 3D command room and environmental variety → desktop release verification → immersive VR**. Do not broaden a phase merely to add more maps or aircraft before its vertical workflow works. Each phase ends with tests, browser evidence, and an update to VERIFICATION.md that distinguishes implemented from verified behaviour.
 
-Phase 2: Tactical Swarms, Sensors & Trainee Profiles (Sprints 6 – 8)
-├── Multi-drone swarm formations (V-formation, trail, scattered attack vectors)
-├── Degraded sensor simulation (optical noise, thermal clutter, EMI feed jitter)
-├── Adjustable difficulty profiles (Recruit, Operator, Specialist)
-├── Trainee profile management & persistent IndexedDB session storage
-└── Cross-session comparative AAR dashboard with historical trend analytics
+Existing observer exercises, instructor dashboard, sourced terrain, and model licenses remain in the project. Preserve their data and navigation while moving the main trainee learning path to the new console. New assessments never use the current rubric match counts as if they were weighted scores.
 
-Phase 3: AI Procedural Engine, Urban Terrain & WebXR (Sprints 9 – 11)
-├── Procedural scenario generator (algorithmic corridor synthesis)
-├── Dense Urban tactical terrain with vertical canyon challenges
-├── WebXR / VR immersive mode (@react-three/xr or PlayCanvas WebXR) for VR headsets
-├── Unit / Squad aggregated readiness reporting
-└── LLM-powered personalized after-action debrief narrative
-```
+## Phase 0 — Documentation and contract alignment
 
----
+1. Replace the stale PlayCanvas PRD, roadmap, and architecture descriptions with Babylon.js reality and the sensor led training requirements.
+2. Update repository agent guidance to preserve asset guardrails while referring to the implemented folders, event/projection contracts, and phased score.
+3. Mark existing four flight exercises as legacy familiarisation and document current AAR limitations.
+4. Establish versioned types for exercise, resolved scenario, private truth, delivered evidence, observed tracks, assessments, actions, rubric, attempt record, and score breakdown. Keep the runtime definitions in pure TypeScript.
+5. Record document cross references and a current implementation/verification matrix.
 
-## Phase 1: MVP Sprints (Current Execution Target)
+**Gate:** documents agree on product scope, engine, mode rules, scoring, and phase status. No future feature is presented as implemented.
 
-### Sprint 1: Project Scaffolding & Headless Simulation Core
-**Goal**: Initialize Vite + React 19 + TypeScript project with PlayCanvas Engine, implement headless TypeScript simulation core, telemetry bus, and deterministic scoring unit tests.
+## Phase 1 — Complete Basic Detection exercise on desktop
 
-- [ ] **Task 1.1: Web Project Initialization**
-  - Initialize Vite + React 19 + TypeScript project.
-  - Install dependencies: `playcanvas`, `zustand`, `lucide-react`, `tailwindcss`.
-  - Configure Tailwind CSS and path aliases (`@/*`).
-- [ ] **Task 1.2: Core Data Types (`src/simulation/types.ts`)**
-  - Define `TrainingEventType`, `TrainingClassification`, `TrainingResponseAction`, `ScenarioState`, `DifficultyTier`.
-  - Create interfaces: `TrainingEvent`, `ScenarioDefinition`, `ScoreResult`, `TraineeProfile`.
-- [ ] **Task 1.3: Telemetry Logger (`src/simulation/TelemetryLogger.ts`)**
-  - High-precision timestamp recording (`performance.now()`).
-  - Pub/sub event listener subscription pattern for UI reactivity.
-  - JSON serialization and export methods.
-- [ ] **Task 1.4: Deterministic Scoring Engine (`src/simulation/ScoringEngine.ts`)**
-  - Implement formulas: 30% detection latency, 30% classification, 30% decision SOP, 10% response speed.
-  - Vitest test suite verifying exact score computations.
-- [ ] **Task 1.5: Zustand Store Bridge (`src/store/useSimulationStore.ts`)**
-  - Connect headless core to reactive store for HUD updates (bearing, timer, events, modal states).
+**Goal:** a trainee at Shakti completes one authored, fixed seed, sensor led exercise from briefing to scored AAR. This is the first playable delivery, before a 3D control room or many scenario variants.
 
----
+1. Add a neutral briefing and trainee console at /trainer, using the existing shared SessionController as the single clock. Retain outdoor observer access for familiarisation and optional visual evidence. The instructor /dashboard selects the same post, exercise, and state.
+2. Extend the headless sensor pipeline so a neutral radar return becomes visible after the quiet period. Create a trainee track ID unrelated to the simulation entity ID. Record capture, delivery, and first presentation timestamps. Acknowledging the return creates a report without a model ray pick.
+3. Add investigation requests: EO cue from measured coordinates, RF observation, movement history, and fictional authorization lookup. Give each a configured delay and an evidence item with source, uncertainty, age, and health. The first release uses an authored UAV case and a friendly fixture for validation. The trainee projection contains only delivered evidence.
+4. Split assessment into object type, coordination, affiliation, and threat level. Record every revision and time. Allow unknown when evidence is incomplete.
+5. Add the high level decision sequence, including verification, report/alert, authorization request, and authorized abstract simulated response. Process resulting events on fixed simulation steps; keep the world progressing while answer panels are open.
+6. Implement the local rule assistant from trainee evidence. Show qualitative support and explanation. Practice may suggest the next investigation; assessment does not.
+7. Implement the versioned rubric and weighted 25/30/20/25 score. Show component explanation and a chronological AAR. Persist the resolved exercise, seed, evidence, actions, and result locally. Provide trainee and instructor read only replay of completed attempts.
+8. Keep existing instructor monitoring functional. Route changes pause/flag assessed attempts rather than silently letting the clock or score continue.
 
-### Sprint 2: PlayCanvas Viewport, Unreal-Grade Lighting & FPS Controls
-**Goal**: Build the PlayCanvas application bootstrapper, clustered forward lighting, free-roam FPS controller with ground collision, and smooth optical zoom.
+**Gate:** from a fresh static build, a trainee completes briefing → cue → acknowledgement → investigation → assessment → decisions → consequence → AAR, with no instructor UI and no mandatory sky search. An identical seed and action transcript produce the same evidence and score. The friendly fixture does not get automatic hostile labels.
 
-- [ ] **Task 2.1: PlayCanvas Engine Bootstrapper (`PlayCanvasApp.ts`)**
-  - Instantiate `pc.Application` on canvas with antialiasing and ACES tone mapping.
-  - Setup clustered directional sunlight, cascaded PCF5 soft shadows, and ambient lighting.
-  - Mount inside React component (`PlayCanvasViewport.tsx`).
-- [ ] **Task 2.2: Free-Roam FPS Controller (`FPSController.ts`)**
-  - Pointer lock mouse pitch/yaw look.
-  - WASD locomotion with ground collision raycast against compound terrain (eye height $1.75\text{m}$).
-  - Continuously broadcast azimuth bearing ($0^\circ - 360^\circ$) to Zustand store.
-- [ ] **Task 2.3: Optical Zoom Rig (`OpticalZoom.ts`)**
-  - Right-click / Shift smoothly interpolates camera FOV from $75^\circ$ down to $25^\circ$ ($3\times$ optical zoom).
-  - Sync optical magnification state to HUD reticle and vignette overlay.
+## Phase 2 — Ambiguity, coordination, and procedural variants
 
----
+1. Add the ambiguous non UAV showcase, the friendly flight exercise, and the coordinated incident showcase. Use imported, licensed bird visuals only where a physical bird is represented. Sensor only false returns have no 3D object.
+2. Extend sensor health with seeded delay, measurement noise, intermittent delivery, outage, and false returns. Distinguish acquisition quality from threat support. Implement track coasting, loss, reacquisition, and grouping history.
+3. Build constrained scenario templates for population, route/behaviour, conditions, sensor health, authorization, and evidence schedule. Use separate seeded random streams and store the fully resolved configuration.
+4. Validate terrain clearance, modeled coverage, evidence availability, rubric solvability, and time budget before briefing. Use bounded retries and a recorded validated fallback.
+5. Run each exercise at all three posts, accounting for the existing imported heightfields and the fictional compound layout. Group level reporting should not force a report for every member of a coordinated group.
+6. Add difficulty tiers that vary information quality and workload. Renderer quality remains independent.
 
-### Sprint 3: Drone Spline Flight & PlayCanvas Visibility Probe
-**Goal**: Implement the drone GLB entity with Catmull-Rom spline flight, animated rotors, 3D audio, and ground-truth visibility probe.
+**Gate:** identical seed/configuration reproduces cue order, tracks, assessments and score; different seeds create meaningful variants. Tests cover UAV, independent contacts, coordinated group, friendly flight, bird group, false return, and valid unknown. No generated assessment requires unavailable evidence.
 
-- [ ] **Task 3.1: Drone Entity Component (`DroneFlight.ts`)**
-  - Construct 3D spline trajectory using Catmull-Rom math with natural banking and pitch.
-  - Animate spinning quadcopter rotor blades and 3D positional motor sound.
-  - Fire `DRONE_SPAWNED` and `SCENARIO_COMPLETED` events.
-- [ ] **Task 3.2: Ground-Truth Visibility Detection (`VisibilityProbeScript.ts`)**
-  - Frustum containment check: `cameraComponent.frustum.containsPoint(dronePos)`.
-  - Angular subtense calculation: $\theta \ge 0.05^\circ$ thresholding.
-  - Multi-point raycasting (Center, Top, Bottom) against terrain and compound buildings using PlayCanvas raycasting.
-  - Dispatch ground-truth `DRONE_VISIBLE` event on first unobstructed detection frame.
+## Phase 3 — Curriculum, persistence, and unit AAR
 
----
+1. Add Levels 0–4 as defined in the PRD, with guided practice, unassisted practice, and assessment. Keep all practice open. Enforce the two distinct seed, 80 overall, 60 each component, no critical error unlock rule.
+2. Store local profiles, ordered event chunks, checkpoints every five simulation seconds, score explanations, and interruption/assistance flags in IndexedDB. Move AAR history away from bounded in memory arrays and length based cursors.
+3. On reload, recover an interrupted record for review; do not silently resume an assessed clock. If storage fails mid run, warn visibly and offer an in memory export.
+4. Implement /aar/:sessionId and /progress. Replay historical trainee evidence or instructor truth without mutating the live session. Show trends by component, level, mode, and rubric version.
+5. Export versioned JSON bundles and validate imports. Deduplicate by profile/session IDs, retain source provenance, reject malformed or unsupported versions. Preserve old exports as unscored legacy history.
 
-### Sprint 4: Tactical HUD & Decision Modals
-**Goal**: Create the responsive military-grade heads-up display overlay and interactive decision modals.
+**Gate:** qualifying attempts unlock levels exactly; demo, instructor modified, legacy, aborted, and interrupted attempts do not. AAR and progress survive reload and transfer through a file to a second installation.
 
-- [ ] **Task 4.1: Tactical HUD Overlay (`TacticalHUD.tsx`)**
-  - Full-screen `pointer-events-none` container with glassmorphism widgets.
-  - Elapsed scenario mission timer at top-right.
-  - Real-time azimuth/elevation coordinate telemetry.
-- [ ] **Task 4.2: Dynamic Compass Heading Tape (`CompassTape.tsx`)**
-  - Horizontal scrolling ribbon showing $0^\circ - 360^\circ$ with cardinal markers (`N`, `E`, `S`, `W`).
-  - Smoothly tracks camera yaw rotation.
-- [ ] **Task 4.3: Reticle & Primary Detection Button (`MarkDetectionBtn.tsx`)**
-  - Central tactical crosshair with status indicator (`SCANNING` / `TARGET ACQUIRED`).
-  - Prominent detection button bound to `Spacebar`.
-  - Logs `PLAYER_DETECTION` event and calculates detection latency.
-- [ ] **Task 4.4: Classification & Decision Modals**
-  - `ClassificationModal.tsx`: 4 threat categories with confidence slider; logs `CLASSIFICATION_SUBMITTED`.
-  - `DecisionModal.tsx`: 4 SOP actions; logs `RESPONSE_SELECTED`.
+## Phase 4 — Command room and environmental variety
 
----
+1. Import a reusable licensed command room interior and record provenance. Place it at each fictional post. Use wall map, radar, EO/IR, RF, and operator panels as adapters to the existing trainee commands.
+2. Provide a focused desktop view for each monitor so all assessment text remains legible. The 3D room cannot become a required pointer accuracy challenge.
+3. Add a fictional semi urban compound variant from imported modules. Add rain and a clearly labelled simulated IR evidence channel. Preserve local regional terrain, collision, and existing map/source credits.
+4. Limit background screen refresh and reuse textures/render targets. The simulation step, evidence and scoring remain independent of graphics quality.
 
-### Sprint 5: Real-World PBR Compound, Day/Night Lighting & Results Screen
-**Goal**: Build the satellite-grade PBR tactical compound, Day/Night lighting presets, and After-Action Review results screen.
+**Gate:** the same assessed exercise works from consolidated desktop controls and room monitors. Rural/semi urban, day/night, clear/fog/rain, single/group and degraded sensor combinations run without revealing scenario truth.
 
-- [ ] **Task 5.1: Real-World Tactical Compound Environment**
-  - High-resolution terrain mesh with PBR gravel, soil, and access road textures.
-  - Perimeter fences, industrial warehouse buildings, watchtowers, and foliage occluders.
-- [ ] **Task 5.2: Day / Night Lighting Presets**
-  - Day Preset: Bright directional sunlight, clear physical sky, crisp cascaded shadows.
-  - Night Preset: Moonlit low-light atmosphere ($0.05\text{ lux}$), perimeter sodium-vapor spotlights, elevated detection challenge.
-- [ ] **Task 5.3: Results Screen & Interactive Timeline (`ResultsScreen.tsx`)**
-  - Mission summary card with final score ($0-100$), letter grade, and latency breakdown.
-  - Interactive horizontal chronological timeline visualizer plotting all 7 events with delta callouts.
-  - One-click "Export Telemetry JSON" download button.
-  - Scenario restart button.
-- [ ] **Task 5.4: End-to-End Test & Verification**
-  - Complete 5 full test runs in browser / Codespaces verifying 60+ FPS and telemetry accuracy.
+## Phase 5 — Desktop release verification
 
----
+- Run deterministic unit tests for sensor timing, classification/rubrics, accepted decision orders, consequences, generation fairness, persistence/replay, and projection privacy.
+- Run integration checks across all three posts, scene/heightfield alignment, route changes, pause/hidden tab, repeated resets, and asset failures.
+- Inspect Chrome and Edge at 1280×720 and 1920×1080, including direct routes, offline operation, pointer lock recovery, export/import, long enough repeated runs to detect duplicate render resources, and AAR.
+- Measure basic, ambiguous, and coordinated exercises on the previously recorded Ryzen 5 5600H/Radeon integrated graphics PC. Record frame times/FPS, quality, browser, resolution, and asset load failures. Target at least 30 FPS at 1280×720 and 60 FPS where feasible.
+- Package a static build, licenses/provenance, sample profile, showcase fixtures, and instructor demonstration instructions.
 
-## Phase 2: Tactical Swarms & Profiles (Future Sprints 6 – 8)
+**Gate:** the desktop feature and acceptance matrix is backed by current evidence. Any unmet browser, FPS, or offline target is reported as a limitation rather than inferred from older builds.
 
-- **Sprint 6: Swarm Formations (`SwarmManager.ts`)**: Coordinated multi-drone flight along synchronized formation offsets (V-formation, Trail, Scattered).
-- **Sprint 7: Degraded Sensors & Difficulty Tiers**: Sensor noise shader, thermal clutter simulation, and Recruit / Operator / Specialist parameter modulators.
-- **Sprint 8: Trainee Profiles & AAR Dashboard**: IndexedDB session persistence, historical trend charts, and recurring error identification.
+## Phase 6 — Immersive VR
 
----
+1. Build a Babylon.js WebXR input adapter to the same session commands, evidence, scoring and persistence. Use seated interaction by default, controller ray selection, readable spatial panels, safe pause/exit, recenter, and desktop fallback.
+2. Add optional standing operation, teleportation and snap turn without changing scenario truth. Log input mode in AAR so desktop and VR timing comparisons remain interpretable.
+3. Serve to headsets with a trusted HTTPS context where needed. Test a named real headset/browser combination for legibility, comfort, interaction, session loss/recovery, and measured frame rate before claiming support.
 
-## Phase 3: AI Procedural Engine & WebXR (Future Sprints 9 – 11)
+**Gate:** a complete assessed scenario works on the named real headset and reproduces the desktop result for the same actions and simulation times. Exact supported headset and hardware performance requirements are selected and recorded when this deferred milestone begins.
 
-- **Sprint 9: Procedural Scenario Generator**: Algorithmic flight corridor and randomized threat synthesis to permanently eliminate rote memorization.
-- **Sprint 10: Urban Tactical Terrain**: Multi-story urban environment with vertical canyons and rooftop vantage points.
-- **Sprint 11: WebXR VR Headset Mode & LLM AAR**: Stereoscopic WebXR controller support via PlayCanvas WebXR and AI debriefing report generator.
+## Cross phase invariants
+
+- One authoritative simulation clock; rendering, UI, assistant, and replay do not advance separate copies.
+- Scenario truth, sensor observation, trainee knowledge, and instructor view are distinct contracts.
+- Decisions are high level and do not simulate weapon controls.
+- Preserve source licenses and truthfully label georeferenced terrain and fictional compounds.
+- Record scenario, generator, event schema, and rubric versions so old results are not silently rescored.
+- Keep a completed phase status/evidence entry in VERIFICATION.md; roadmap text alone is not release evidence.

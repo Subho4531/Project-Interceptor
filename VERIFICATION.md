@@ -1,5 +1,13 @@
 # Verification record
 
+## Dashboard access and sensor wall — 6 October 2026
+
+The active repository is `C:\Users\subho\OneDrive\Documents\Project Interceptor`; the older Downloads `web-trainer` copy has no dashboard. The current build opens `/dashboard` both directly and from the trainee route. The dashboard now opens on a sensor wall with a simulated radar scope, one live EO render, a parallel false-colour visualization of that render, EO/radar counts, conditions and RF query status. A measured radar return can cue the EO camera. The geographic tactical map remains available through its view button. `/trainer` can open the same EO/thermal pair when the trainee requests EO evidence.
+
+- Chrome and Edge static-build smoke at 1280×720 passed direct and trainer-linked dashboard navigation, delayed radar return, live EO/thermal loading, EO cueing, tactical map switching, and return to the sensor wall without page errors. Evidence: `artifacts/qa/dashboard-fix/`.
+- The sensor-led exercise smoke passed with an EO/thermal request, AAR save and replay. All 87 unit tests and the production build pass.
+- The thermal pane colourizes the optical image. It has no independent infrared or temperature model and is explicitly labeled as a visualization in the UI.
+
 ## First sensor-led exercise — 6 October 2026
 
 The first playable Basic Detection flow is available at `/trainer`; the former ground-level view is at `/observer`. It uses the existing Shakti regional scene and shared fixed-step session. A delayed neutral radar cue leads to trainee acknowledgment, requested EO/RF/roster/history evidence, separate classification and threat judgments, high-level decisions, a scheduled abstract consequence, and a scored AAR. Completed practice attempts persist in local IndexedDB and open at `/aar/:sessionId` with a time scrubber for delivered evidence and recorded actions. Scenario truth is exposed only after completion.

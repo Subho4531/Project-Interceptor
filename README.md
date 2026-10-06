@@ -4,12 +4,16 @@ Three regional border training environments, an instructor dashboard, and the fi
 
 ## Run locally
 
+Run the current project from `C:\Users\subho\OneDrive\Documents\Project Interceptor`. The older `Downloads\UAV_Intercept_Simulator_V1.5\web-trainer` copy predates the dashboard.
+
 ```powershell
 npm install
 npm run dev
 ```
 
 Open `/trainer` for the sensor-led Basic Detection exercise, `/observer` for the ground-level 3D view, or `/dashboard` for the instructor map. Completed exercise replays open at `/aar/:sessionId`.
+
+`npm run dev:dashboard` launches the development server and opens the dashboard directly. Its default sensor wall shows radar returns, a live EO camera, synthetic thermal visualization and sensor/RF status; use **Tactical map** to switch to the geographic map. The thermal view colourizes the optical render and is not an independent infrared measurement.
 
 ## Training posts
 

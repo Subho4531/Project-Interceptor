@@ -1,12 +1,12 @@
 export type Vec3 = { x: number; y: number; z: number };
-export type Conditions = { timeOfDay: 'day' | 'night'; visibility: 'clear' | 'reduced' };
+export type Conditions = { timeOfDay: 'day' | 'night'; visibility: 'clear' | 'reduced'; weather?: 'clear' | 'fog' | 'rain' };
 export type Quality = 'standard' | 'low';
 export type Bounds = { minX: number; maxX: number; minZ: number; maxZ: number };
 export type Zone = Bounds & { id: string; minY: number; maxY: number };
 export type Obstacle = Bounds & { id: string };
 export type Placement = { id: string; module: 'facility' | 'shelter' | 'barrier'; position: Vec3; size: Vec3 };
 export type MapId = 'rural-post-07' | 'mountain-pass' | 'rocky-valley';
-export type TrainingScenarioId = 'low-ingress' | 'surveillance' | 'penetration' | 'swarm';
+export type TrainingScenarioId = 'low-ingress' | 'surveillance' | 'penetration' | 'swarm' | 'ambiguous' | 'friendly' | 'coordinated' | 'mixed';
 export type ExerciseId = 'patrol' | 'route-a' | 'route-b' | 'route-c' | 'route-d' | TrainingScenarioId;
 export type Classification = 'benign' | 'unknown' | 'concern' | 'threat';
 export type ResponseChoice = 'observe' | 'information' | 'report' | 'simulated-response';
@@ -29,6 +29,7 @@ export interface TrainingState { briefing: ScenarioBriefing; reports: ContactRep
 export type LandscapePlacement = { id: string; model: 'mountain' | 'dry-terrain' | 'boulders'; position: Vec3; width: number; heightScale: number; heading: number; collidable: boolean };
 export interface EnvironmentConfig {
   id: MapId; label: string; description: string;
+  setting?: 'rural' | 'semi-urban';
   terrain: { size: number; subdivisions: number; profile: 'rural' | 'mountain' | 'valley'; tint: string }; bounds: Bounds;
   scenery: LandscapePlacement[]; vegetation: { trees: number; shrubs: number };
   protectedZones: Zone[]; observerSpawn: Vec3 & { heading: number };

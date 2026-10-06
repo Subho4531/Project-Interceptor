@@ -1,5 +1,6 @@
 import type { Conditions, MapId, TrainingScenarioId, TrainingState } from '../simulation/types';
-import type { SensorObservation, SensorTrack } from '../simulation/SensorEngine';
+import type { SensorHealthSummary, SensorObservation, SensorTrack } from '../simulation/SensorEngine';
+import type { EnvironmentSetting } from '../simulation/EnvironmentVariants';
 
 export type PostId = 'shakti-punjab' | 'maru-rajasthan' | 'himadri-sikkim';
 export type GeographicPosition = [longitude:number, latitude:number];
@@ -22,16 +23,27 @@ export interface SessionSnapshot {
   tracks: PreviewTrack[]; events: SessionEvent[];
   protectedZone?: GeographicPosition[]; swarmCount?: number; pairDelay?: number;
   sensorTracks?: (SensorTrack & { geographicPosition: GeographicPosition })[];
+  sensorHealth?: SensorHealthSummary;
+  environmentSetting?: EnvironmentSetting;
   eoObservations?: (SensorObservation & { geographicPosition: GeographicPosition })[];
   training?: TrainingState; assetsReady?: boolean; error?: string;
   loadState?: 'idle' | 'loading' | 'ready' | 'error';
   eo?: { yaw: number; pitch: number; zoom: boolean };
+  trainingMode?: 'guided' | 'practice' | 'assessment' | 'demo';
+  level?: 0 | 1 | 2 | 3 | 4;
+  profileId?: string;
+  eligibilityFlags?: string[];
+  rubricVersion?: string;
+  storageError?: string;
+  inputMode?: 'desktop' | 'vr';
+  inputModeTransitions?: {time:number;mode:'desktop'|'vr'}[];
 }
 export type SimulationCommand =
   | { type: 'start' | 'pause' | 'resume' | 'reset' | 'finish'; reason?: string; discardConfirmed?: boolean }
   | { type: 'post'; postId: PostId; discardConfirmed?: boolean }
   | { type: 'scenario'; scenarioId: TrainingScenarioId; discardConfirmed?: boolean }
   | { type: 'configure'; quietPeriod: number; swarmCount: number; pairDelay: number }
+  | { type: 'seed'; seed: number }
   | { type: 'eo'; bearing: number; elevation: number; zoom: boolean }
   | { type: 'speed'; speed: 1 | 2 | 4 }
   | { type: 'conditions'; conditions: Conditions }

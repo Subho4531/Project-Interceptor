@@ -26,6 +26,31 @@ export const trainingScenarios: { id: TrainingScenarioId; definition: TrainingDe
   } },
 ];
 
+// Sensor-led assessment situations. The four older outdoor exercises above remain
+// intact for familiarisation and regression checks.
+export const sensorScenarios: { id: TrainingScenarioId; definition: TrainingDefinition }[] = [
+  { id: 'mixed', definition: {
+    briefing: { code: 'TR 05', title: 'Track prioritisation', description: 'Several tracks may appear. Investigate each before deciding how to prioritize.', objectives: ['Maintain separate assessments.', 'Compare authorization and behaviour.', 'Revise decisions as evidence arrives.'] },
+    duration: 115, expectedClassification: 'unknown', expectedResponse: 'information',
+    rationale: 'Two independent UAVs have different fictional authorization and risk profiles. Assess each contact using its own evidence.'
+  } },
+  { id: 'ambiguous', definition: {
+    briefing: { code: 'TR 02', title: 'Uncertain activity', description: 'Investigate intermittent airspace returns. Compare sensor evidence before assessing what is present.', objectives: ['Acknowledge a neutral return.', 'Check evidence quality and availability.', 'Avoid unsupported escalation.'] },
+    duration: 95, expectedClassification: 'benign', expectedResponse: 'information',
+    rationale: 'This authored case uses a sensor-only false return. The trainee should preserve uncertainty until the delayed evidence resolves it.'
+  } },
+  { id: 'friendly', definition: {
+    briefing: { code: 'TR 03', title: 'Authorization review', description: 'Investigate a track near the post and verify its authorization before selecting a response.', objectives: ['Compare radar with EO and roster evidence.', 'Separate object type from affiliation.', 'Choose proportionate action.'] },
+    duration: 105, expectedClassification: 'benign', expectedResponse: 'observe',
+    rationale: 'The UAV has a fictional matching authorization record and poses low concern in this exercise.'
+  } },
+  { id: 'coordinated', definition: {
+    briefing: { code: 'TR 04', title: 'Multiple returns', description: 'Several returns may appear. Investigate their relationship, assess urgency, and use high-level command actions.', objectives: ['Recognize related tracks.', 'Compare movement evidence.', 'Escalate only through the authorized command path.'] },
+    duration: 115, expectedClassification: 'threat', expectedResponse: 'simulated-response',
+    rationale: 'The authored contacts approach together. The exercise tests group-level coordination and authorized escalation.'
+  } },
+];
+
 function routeAboveTerrain(map: EnvironmentConfig, points: Vec3[]): Vec3[] {
   // Densify authored segments for terrain clearance on every existing map.
   // Heights are metres above ground; this is a training animation, not flight physics.
@@ -43,13 +68,24 @@ function routeAboveTerrain(map: EnvironmentConfig, points: Vec3[]): Vec3[] {
   return result;
 }
 
-export function createTrainingScenario(map: EnvironmentConfig, id: TrainingScenarioId, options: {swarmCount?:number;pairDelay?:number} = {}): ScenarioConfig {
-  const selected = trainingScenarios.find(s => s.id === id)!;
+export function createTrainingScenario(map: EnvironmentConfig, id: TrainingScenarioId, options: {swarmCount?:number;pairDelay?:number;seed?:number} = {}): ScenarioConfig {
+  const selected = [...trainingScenarios,...sensorScenarios].find(s => s.id === id)!;
   const points = (values: number[][]): Vec3[] => values.map(([x,y,z]) => ({x,y,z}));
-  const entity = (number: number, assetId: string, speed: number, spawnTime: number, route: Vec3[]): ScenarioEntity => ({ id: `aerial-${String(number).padStart(2,'0')}`, assetId, speed, spawnTime, route: routeAboveTerrain(map,route) });
+  const seed=options.seed??26052;
+  const entity = (number: number, assetId: string, speed: number, spawnTime: number, route: Vec3[]): ScenarioEntity => {
+    const hash=(Math.imul(seed ^ Math.imul(number,7919),1664525)+1013904223)>>>0;
+    const dx=seed===26052?0:((hash&65535)/65535-.5)*30,dz=seed===26052?0:((hash>>>16)/65535-.5)*30;
+    return { id: `aerial-${String(number).padStart(2,'0')}`, assetId, speed, spawnTime, route: routeAboveTerrain(map,route.map(point=>({...point,x:point.x+dx,z:point.z+dz}))) };
+  };
   let entities: ScenarioEntity[];
   if (id === 'low-ingress') {
     entities = [entity(1,'sketchfab-fpv',7,0,points([[-150,12,150],[-95,11,110],[-45,10,80],[0,12,35],[55,16,50],[145,21,140]]))];
+  } else if (id === 'ambiguous') {
+    entities = [];
+  } else if (id === 'mixed') {
+    entities = [entity(1,'sketchfab-orlan',5,0,points([[-180,55,200],[-80,55,210],[80,55,215],[190,55,220]])),entity(2,'sketchfab-fpv',6,3,points([[165,25,170],[90,22,100],[20,18,45],[-45,23,-40],[-170,30,-150]]))];
+  } else if (id === 'friendly') {
+    entities = [entity(1,'sketchfab-orlan',10,0,points([[-180,55,170],[-100,52,140],[0,50,145],[110,54,165],[195,55,195]]))];
   } else if (id === 'surveillance') {
     const orbit = Array.from({length:25},(_,i) => { const angle = Math.PI + i * Math.PI / 6; return {x: 100*Math.cos(angle), y: 65, z: 165 + 65*Math.sin(angle)}; });
     entities = [entity(1,'sketchfab-orlan',13,0,[{x:-195,y:65,z:165},...orbit,{x:-200,y:70,z:165}])];
@@ -61,7 +97,7 @@ export function createTrainingScenario(map: EnvironmentConfig, id: TrainingScena
       return entity(i+1,'sketchfab-geran',10,Math.floor(i/2)*(options.pairDelay??4),points([[side*175,55+offset*.2,185+offset],[side*105,46,125+offset],[side*32,32,42],[side*12,28,-15],[side*130,40,-135-offset]]));
     });
   }
-  const routeEnd = Math.max(...entities.map(e => e.spawnTime + e.route.slice(1).reduce((distance,p,i) => distance + Math.hypot(p.x-e.route[i].x,p.y-e.route[i].y,p.z-e.route[i].z),0) / e.speed));
-  return { id: `${map.id}-${id}`, seed:26052, quietPeriod:25, conditions:{timeOfDay:'day',visibility:'clear'}, entities,
+  const routeEnd = entities.length ? Math.max(...entities.map(e => e.spawnTime + e.route.slice(1).reduce((distance,p,i) => distance + Math.hypot(p.x-e.route[i].x,p.y-e.route[i].y,p.z-e.route[i].z),0) / e.speed)) : 0;
+  return { id: `${map.id}-${id}`, seed, quietPeriod:25, conditions:{timeOfDay:id==='ambiguous'||id==='coordinated'?'night':'day',visibility:id==='ambiguous'||id==='coordinated'?'reduced':'clear'}, entities,
     training: {...selected.definition,briefing:structuredClone(selected.definition.briefing),duration:Math.max(selected.definition.duration,Math.ceil(routeEnd)+8)} };
 }

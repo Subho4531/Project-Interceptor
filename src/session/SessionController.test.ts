@@ -58,4 +58,27 @@ describe('shared live session',()=>{
     controller.classify('contact-1','unknown');controller.respond('contact-1','observe');controller.command({type:'finish'});expect(controller.sim.entities.size).toBe(0);expect(controller.getTraineeSnapshot().training?.review?.expected).toBe(1);expect(controller.exportSession('instructor')).toHaveProperty('config');
   });
   it('keeps familiarisation profiles and completes them explicitly',()=>{const controller=make();expect(controller.setExercise('route-d').ok).toBe(true);expect(controller.exercise).toBe('route-d');expect(controller.sim.config.entities[0].assetId).toBe('sketchfab-geran');controller.command({type:'start'});expect(controller.command({type:'finish'}).ok).toBe(true);expect(controller.sim.status).toBe('completed');});
+  it('locks assessment settings and records interruption and instructor access',()=>{
+    const controller=make();
+    expect(controller.prepareTraining({profileId:'p1',mode:'assessment',level:2,seed:1,scenarioId:'friendly'},1).ok).toBe(false);
+    expect(controller.prepareTraining({profileId:'p1',mode:'assessment',level:1,seed:1,scenarioId:'low-ingress'},1).ok).toBe(true);
+    expect(controller.command({type:'speed',speed:4}).ok).toBe(false);
+    controller.command({type:'start'});controller.pause('hidden-tab');controller.markInstructorAccess();
+    expect(controller.getSnapshot().eligibilityFlags).toEqual(expect.arrayContaining(['interrupted','instructor-modified']));
+    controller.command({type:'reset',discardConfirmed:true});expect(controller.getSnapshot().eligibilityFlags).toEqual([]);
+  });
+  it('keeps sensor-only returns separate from physical objects and repeats seeded routes',()=>{
+    const controller=make();controller.command({type:'scenario',scenarioId:'ambiguous'});controller.command({type:'start'});advance(controller,30);
+    expect(controller.sim.entities.size).toBe(0);expect(controller.getExerciseState().tracks).toHaveLength(1);expect(JSON.stringify(controller.getExerciseState())).not.toContain('sensor-only-return-1');
+    controller.command({type:'reset',discardConfirmed:true});controller.command({type:'scenario',scenarioId:'mixed'});controller.command({type:'seed',seed:42});const first=structuredClone(controller.sim.config);controller.command({type:'reset',discardConfirmed:true});expect(controller.sim.config).toEqual(first);expect(controller.sim.config.entities).toHaveLength(2);
+  });
+  it('discloses resolved recipes only after completion and retains VR input history',()=>{
+    const controller=make();expect(controller.getCompletedRecipe()).toBeUndefined();
+    controller.command({type:'seed',seed:42});controller.command({type:'start'});controller.recordInputMode('vr');advance(controller,1);controller.recordInputMode('desktop');
+    expect(controller.getCompletedRecipe()).toBeUndefined();controller.command({type:'finish'});
+    const recipe=controller.getCompletedRecipe()!;
+    expect(recipe.generation.resolvedSeed).toBe(controller.getSnapshot().seed);expect(recipe.scenario.entities).toEqual(controller.sim.config.entities);
+    expect(controller.getSnapshot().inputModeTransitions?.map(item=>item.mode)).toEqual(['desktop','vr','desktop']);
+    controller.command({type:'reset',discardConfirmed:true});expect(controller.getCompletedRecipe()).toBeUndefined();expect(controller.getSnapshot().inputModeTransitions).toHaveLength(1);
+  });
 });

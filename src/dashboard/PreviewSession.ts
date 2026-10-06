@@ -2,6 +2,10 @@ import { offsetPosition, postById } from './posts';
 import type { CommandResult, GeographicPosition, PreviewTrack, SessionAdapter, SessionSnapshot, SimulationCommand } from './types';
 
 export const scenarioOptions = [
+  {id:'mixed',code:'TR 05',label:'Track prioritisation · assessed'},
+  {id:'ambiguous',code:'TR 02',label:'Uncertain activity · assessed'},
+  {id:'friendly',code:'TR 03',label:'Authorization review · assessed'},
+  {id:'coordinated',code:'TR 04',label:'Multiple returns · assessed'},
   {id:'low-ingress',code:'EX 01',label:'Low-altitude incursion'},
   {id:'surveillance',code:'EX 02',label:'Surveillance & loiter'},
   {id:'penetration',code:'EX 03',label:'Perimeter penetration'},
@@ -10,8 +14,12 @@ export const scenarioOptions = [
 type TrackDefinition = {airframe:string;spawn:number;altitude:number;speed:number;points:number[][]};
 function fixtures(snapshot: SessionSnapshot): PreviewTrack[] {
   const origin=postById(snapshot.postId).origin;
-  const definitions:TrackDefinition[] = snapshot.scenarioId === 'swarm'
+  const definitions:TrackDefinition[] = snapshot.scenarioId === 'ambiguous' ? [] : snapshot.scenarioId === 'swarm' || snapshot.scenarioId === 'coordinated'
     ? [0,1,2,3].map(i=>{const side=i%2 ? 1:-1;return {airframe:'Geranium-2',spawn:25+(i<2?0:4),altitude:55+i*6,speed:22,points:[[side*2600,2400+i*150],[side*1200,1400],[side*280,250],[side*500,-650],[side*2500,-2300]]};})
+    : snapshot.scenarioId === 'mixed'
+      ? [{airframe:'Orlan-10',spawn:25,altitude:55,speed:20,points:[[-1600,800],[-800,550],[0,550],[1200,800]]},{airframe:'FPV',spawn:28,altitude:25,speed:18,points:[[800,1000],[500,650],[0,0],[-500,-600]]}]
+    : snapshot.scenarioId === 'friendly'
+      ? [{airframe:'Orlan-10',spawn:25,altitude:55,speed:20,points:[[-2600,2300],[-1200,1700],[0,1700],[1500,2000]]}]
     : snapshot.scenarioId === 'surveillance'
       ? [{airframe:'Orlan-10',spawn:25,altitude:110,speed:28,points:Array.from({length:25},(_,i)=>[2200*Math.cos(Math.PI+i*Math.PI/6),3000+1000*Math.sin(Math.PI+i*Math.PI/6)])}]
       : snapshot.scenarioId === 'penetration'

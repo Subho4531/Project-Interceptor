@@ -1,19 +1,23 @@
 import { Simulation, FIXED_STEP, sampleRoute } from '../simulation/Simulation';
 import { environments, createScenario } from '../simulation/config';
+import { applyEnvironmentSetting, type EnvironmentSetting } from '../simulation/EnvironmentVariants';
 import { createTrainingScenario } from '../simulation/trainingScenarios';
+import { resolveValidatedScenario } from '../simulation/ScenarioValidation';
+import type { ResolvedExerciseRecipe } from '../training/ResolvedRecipe';
 import { GridTerrainSurface, setTerrainSurface } from '../simulation/TerrainSurface';
 import type { Heightfield } from '../simulation/TerrainSurface';
-import { SensorEngine } from '../simulation/SensorEngine';
+import { SensorEngine, type SensorTrack } from '../simulation/SensorEngine';
 import { ExerciseEngine, type ExerciseAction } from '../training/Exercise';
 import { terrainHeight } from '../simulation/world';
 import { localToGeographic } from '../simulation/geographic';
 import { posts, postById } from '../dashboard/posts';
 import type { SessionSnapshot, SessionAdapter, SimulationCommand, CommandResult, PostId, SessionEvent } from '../dashboard/types';
-import type { DroneAssetDefinition, EnvironmentConfig, TrainingScenarioId, Vec3, ExerciseId, Classification, ResponseChoice } from '../simulation/types';
+import type { DroneAssetDefinition, EnvironmentConfig, TrainingScenarioId, Vec3, ExerciseId, Classification, ResponseChoice, Conditions } from '../simulation/types';
 import { assetUrl } from '../routing';
 
 export interface ObserverPose { position: Vec3; yaw: number; pitch: number; zoom: boolean; }
 export interface SessionOptions { postId?: PostId; scenarioId?: TrainingScenarioId; availableAssets?: Set<string>; terrain?: Heightfield; }
+export interface TrainingRunSettings { profileId:string; mode:'guided'|'practice'|'assessment'|'demo'; level:0|1|2|3|4; seed:number; scenarioId:TrainingScenarioId; environmentSetting?:EnvironmentSetting; weather?:NonNullable<Conditions['weather']>; }
 const byteCache=new Map<string,Promise<ArrayBuffer>>();
 function fetchBytes(url:string):Promise<ArrayBuffer> {
   let result=byteCache.get(url);
@@ -46,6 +50,17 @@ export class SessionController implements SessionAdapter {
   private quietPeriod=25;
   private swarmCount=4;
   private pairDelay=4;
+  private variantSeed=26052;
+  private resolvedGeneration:ResolvedExerciseRecipe['generation']={version:'authored-1',requestedSeed:26052,resolvedSeed:26052,retries:0,fallbackUsed:false};
+  private trainingMode:TrainingRunSettings['mode']='practice';
+  private trainingLevel:TrainingRunSettings['level']=1;
+  private profileId='local-default';
+  private environmentSetting:EnvironmentSetting='rural';
+  private trainingWeather:NonNullable<Conditions['weather']>='clear';
+  private eligibilityFlags=new Set<string>();
+  private storageError?:string;
+  private inputMode:'desktop'|'vr'='desktop';
+  private inputModeTransitions:{time:number;mode:'desktop'|'vr'}[]=[];
   private speed:1|2|4=1;
   private availableAssets:Set<string>;
   private assetsReady=false;
@@ -87,18 +102,29 @@ export class SessionController implements SessionAdapter {
     // Imported booth source dimensions; every compound module uses uniform scale.
     const booth={x:8,y:3.5157833549386677,z:3.0653649896194444};
     this.environment.placements=this.environment.placements.map(p=>{const scale=Math.min(p.size.x/booth.x,p.size.y/booth.y,p.size.z/booth.z);return {...p,module:'facility',size:{x:booth.x*scale,y:booth.y*scale,z:booth.z*scale}};});
+    this.environment=applyEnvironmentSetting(this.environment,this.environmentSetting);
     this.environment.regional={id:post.id,origin:post.origin,modelUrl:`./assets/regions/${post.id}/terrain.glb`,heightfieldUrl:`./assets/regions/${post.id}/heightfield.json`,imageryUrl:`./assets/regions/${post.id}/imagery.jpg`,metadataUrl:`./assets/regions/${post.id}/metadata.json`};
   }
-  private rebuild(){
-    const conditions=this.sim?.conditions??{timeOfDay:'day' as const,visibility:'clear' as const};
-    const config=['low-ingress','surveillance','penetration','swarm'].includes(this.exerciseId)?createTrainingScenario(this.environment,this.scenarioId,{swarmCount:this.swarmCount,pairDelay:this.pairDelay}):createScenario(this.environment,this.exerciseId);config.quietPeriod=this.quietPeriod;config.conditions={...conditions};
+  private rebuild(conditionsOverride?: Conditions){
+    const previous=conditionsOverride??this.sim?.conditions??{timeOfDay:'day' as const,visibility:'clear' as const};
+    const weather=previous.weather??this.trainingWeather;
+    this.trainingWeather=weather;
+    const conditions:Conditions=previous.weather===undefined&&weather==='clear'?{timeOfDay:previous.timeOfDay,visibility:previous.visibility}:{...previous,weather};
+    const difficulty=this.trainingLevel<=1?'foundation':this.trainingLevel===2?'intermediate':'advanced';
+    const supported=['low-ingress','ambiguous','friendly','coordinated','mixed'].includes(this.exerciseId);
+    const resolved=supported?resolveValidatedScenario(this.environment,this.scenarioId,{swarmCount:this.swarmCount,pairDelay:this.pairDelay,seed:this.variantSeed,quietPeriod:this.quietPeriod,conditions,difficulty}):undefined;
+    const config=resolved?.config??(['surveillance','penetration','swarm'].includes(this.exerciseId)?createTrainingScenario(this.environment,this.scenarioId,{swarmCount:this.swarmCount,pairDelay:this.pairDelay,seed:this.variantSeed}):createScenario(this.environment,this.exerciseId));config.quietPeriod=this.quietPeriod;config.conditions={...conditions};
+    this.resolvedGeneration=resolved?.generation??{version:'authored-1',requestedSeed:this.variantSeed,resolvedSeed:config.seed,retries:0,fallbackUsed:false};
     if(config.training)config.training.briefing.description=`${postById(this.postId).name}: ${config.training.briefing.description}`;
-    this.sim=new Simulation(config,this.environment,this.availableAssets);this.sensorEngine=new SensorEngine(this.environment,config.seed);
-    this.sensorExercise=new ExerciseEngine({seed:config.seed,quietPeriod:config.quietPeriod});
+    this.sim=new Simulation(config,this.environment,this.availableAssets);this.sensorEngine=new SensorEngine(this.environment,config.seed,{difficulty:this.trainingLevel<=1?'foundation':this.trainingLevel===2?'intermediate':'advanced'});
+    const fixture=this.scenarioId==='ambiguous'?'ambiguous':this.scenarioId==='friendly'?'friendly':this.scenarioId==='coordinated'?'coordinated':this.scenarioId==='mixed'?'mixed':'basic';
+    this.sensorExercise=new ExerciseEngine({seed:config.seed,quietPeriod:config.quietPeriod,fixture});
     if(typeof document!=='undefined')this.sim.setHidden(Boolean(document.hidden));
     const spawn=this.environment.observerSpawn;
     this.observer={position:{x:spawn.x,y:terrainHeight(spawn.x,spawn.z,this.environment.terrain)+1.72,z:spawn.z},yaw:spawn.heading,pitch:0,zoom:false};
     this.alpha=0;this.sessionNumber++;this.events=[];this.eventSequence=0;this.simulationEventCount=0;this.sensorEventCount=0;
+    this.eligibilityFlags.clear();
+    this.inputModeTransitions=[{time:0,mode:this.inputMode}];
     this.trails.clear();this.lastTrailTime=-1;
   }
   updateObserver(pose:Partial<ObserverPose>){this.observer={...this.observer,...pose};}
@@ -113,6 +139,13 @@ export class SessionController implements SessionAdapter {
     this.sensorEventCount=this.sensorEngine.events.length;
     pending.sort((a,b)=>a.time-b.time);for(const e of pending)this.log(e.type,e.message,'simulation',e.time);
   }
+  private radarProjection():SensorTrack[]{
+    const tracks=[...this.sensorEngine.tracks.values()];
+    if(this.scenarioId!=='ambiguous'||this.sim.time<this.quietPeriod+1||this.sim.status==='completed')return tracks;
+    const age=this.sim.time-this.quietPeriod,position={x:125+Math.sin(age*.22)*14,y:terrainHeight(125,480,this.environment.terrain)+35,z:480+Math.cos(age*.17)*11};
+    tracks.push({id:'radar-synthetic-return-1',sensorId:'radar',entityId:'sensor-only-return-1',label:'Unclassified return',position,time:this.sim.time,bearing:(Math.atan2(position.x,position.z)*180/Math.PI+360)%360,elevation:4,state:age>=3?'firm':'acquiring',quality:Math.min(.42,.2+age*.03),age:0,detections:Math.max(1,Math.floor(age)),missed:0});
+    return tracks;
+  }
   private refresh(){
     this.collectEvents();const post=postById(this.postId),geo=(p:Vec3)=>localToGeographic(p,post.origin,post.heading);
     if(this.sim.time-this.lastTrailTime>=.099 || this.lastTrailTime<0){for(const e of this.sim.entities.values()){const trail=this.trails.get(e.id)??[];trail.push({...e.position});if(trail.length>1800)trail.shift();this.trails.set(e.id,trail);}this.lastTrailTime=this.sim.time;}
@@ -121,9 +154,12 @@ export class SessionController implements SessionAdapter {
       return {id:e.id,label:`UAV ${String(index+1).padStart(2,'0')}`,airframe:e.assetId.replace('sketchfab-','').toUpperCase(),state:(this.sim.time<spawnTime?'scheduled':active?'active':'departed') as 'scheduled'|'active'|'departed',position:geo(position),altitudeAGL:position.y-terrainHeight(position.x,position.z,this.environment.terrain),speed:e.speed,heading:((active?.heading??sample.heading)*180/Math.PI+360)%360,route:e.route.map(geo),trail:(this.trails.get(e.id)??[]).map(geo),spawnTime};
     });
     const zone=this.environment.protectedZones[0];
-    this.snapshot={mode:'live',sessionId:`session-${this.instanceId}-${this.sessionNumber}`,postId:this.postId,scenarioId:this.scenarioId,status:this.sim.status,time:this.sim.time,duration:this.quietPeriod+(this.sim.config.training?.duration??0),quietPeriod:this.quietPeriod,seed:this.sim.config.seed,speed:this.speed,conditions:{...this.sim.conditions},tracks,events:[...this.events],swarmCount:this.swarmCount,pairDelay:this.pairDelay,training:this.sim.trainingState(),assetsReady:this.assetsReady,error:this.error,loadState:this.loadState,
+    this.snapshot={mode:'live',sessionId:`session-${this.instanceId}-${this.sessionNumber}`,postId:this.postId,scenarioId:this.scenarioId,status:this.sim.status,time:this.sim.time,duration:this.quietPeriod+(this.sim.config.training?.duration??0),quietPeriod:this.quietPeriod,seed:this.sim.config.seed,speed:this.speed,conditions:{...this.sim.conditions},tracks,events:[...this.events],swarmCount:this.swarmCount,pairDelay:this.pairDelay,training:this.sim.trainingState(),assetsReady:this.assetsReady,error:this.error,loadState:this.loadState,trainingMode:this.trainingMode,level:this.trainingLevel,profileId:this.profileId,eligibilityFlags:[...this.eligibilityFlags],rubricVersion:'prototype-1',
       protectedZone:zone?[geo({x:zone.minX,y:0,z:zone.minZ}),geo({x:zone.maxX,y:0,z:zone.minZ}),geo({x:zone.maxX,y:0,z:zone.maxZ}),geo({x:zone.minX,y:0,z:zone.maxZ}),geo({x:zone.minX,y:0,z:zone.minZ})]:[],
-      sensorTracks:[...this.sensorEngine.tracks.values()].map(t=>({...structuredClone(t),age:Math.max(0,this.sim.time-t.time),geographicPosition:geo(t.position)})),eoObservations:this.sensorEngine.observations.map(o=>({...structuredClone(o),geographicPosition:geo(o.position)})),eo:{yaw:this.sensorEngine.eo.bearing*Math.PI/180,pitch:this.sensorEngine.eo.elevation*Math.PI/180,zoom:this.sensorEngine.eo.fieldOfView===8}};
+      sensorTracks:this.radarProjection().map(t=>({...structuredClone(t),age:Math.max(0,this.sim.time-t.time),geographicPosition:geo(t.position)})),eoObservations:this.sensorEngine.observations.map(o=>({...structuredClone(o),geographicPosition:geo(o.position)})),eo:{yaw:this.sensorEngine.eo.bearing*Math.PI/180,pitch:this.sensorEngine.eo.elevation*Math.PI/180,zoom:this.sensorEngine.eo.fieldOfView===8},sensorHealth:this.sensorEngine.getHealthSummary(),environmentSetting:this.environmentSetting};
+    this.snapshot.storageError=this.storageError;
+    this.snapshot.inputMode=this.inputMode;
+    this.snapshot.inputModeTransitions=structuredClone(this.inputModeTransitions);
     for(const listener of this.listeners)listener();
   }
   async loadAssets():Promise<void>{
@@ -154,22 +190,30 @@ export class SessionController implements SessionAdapter {
     const reject=(message:string)=>{this.log('command-rejected',`${command.type}: ${message}`,source);this.refresh();return {ok:false,message};};
     const active=this.sim.status!=='ready';
     if(['post','scenario','reset'].includes(command.type)&&active&&!(command as {discardConfirmed?:boolean}).discardConfirmed)return reject('Confirm discarding the current session.');
+    if(this.trainingMode==='assessment'&&['post','scenario','configure','seed','speed','conditions'].includes(command.type))return reject('Assessment configuration is locked. Finish or reset this attempt first.');
+    if(['post','scenario','reset'].includes(command.type)&&active&&this.sim.status!=='completed'){this.eligibilityFlags.add('aborted');this.refresh();}
     let message='';
     switch(command.type){
       case 'start':if(this.sim.status!=='ready')return reject('Start requires a ready session.');if(!this.assetsReady)return reject(this.error??'Required local assets are loading.');this.sim.start();if((this.sim.status as string)!=='running')return reject('Session cannot start while hidden.');this.updateExercise();message='Session started.';break;
-      case 'pause':if(this.sim.status!=='running')return reject('Session is not running.');this.sim.pause(command.reason??source);message='Session paused; clock held.';break;
+      case 'pause':if(this.sim.status!=='running')return reject('Session is not running.');if(this.trainingMode==='assessment')this.eligibilityFlags.add('interrupted');this.sim.pause(command.reason??source);message='Session paused; clock held.';break;
       case 'resume':if(this.sim.status!=='paused')return reject('Session is not paused.');this.sim.resume();if((this.sim.status as string)!=='running')return reject('Resume requires a visible tab.');message='Session resumed.';break;
       case 'finish':if(!['running','paused'].includes(this.sim.status))return reject('Start before finishing.');this.sim.finish();this.updateExercise();message='Exercise finished; review ready.';break;
       case 'reset':this.rebuild();message='Session reset; ready at 00:00.';break;
       case 'post':if(!posts.some(p=>p.id===command.postId))return reject('Unknown post.');this.postId=command.postId;this.generation++;this.loadPromise=undefined;this.assetsReady=false;this.loadState='idle';this.error=undefined;this.makeEnvironment();this.rebuild();message=`${postById(this.postId).name} selected; loading regional assets.`;void this.loadAssets();break;
-      case 'scenario':if(!['low-ingress','surveillance','penetration','swarm'].includes(command.scenarioId))return reject('Unknown exercise.');this.scenarioId=command.scenarioId;this.exerciseId=this.scenarioId;this.rebuild();message='Exercise selected; ready at 00:00.';break;
+      case 'scenario':if(!['low-ingress','surveillance','penetration','swarm','ambiguous','friendly','coordinated','mixed'].includes(command.scenarioId))return reject('Unknown exercise.');this.scenarioId=command.scenarioId;this.exerciseId=this.scenarioId;this.rebuild(['ambiguous','coordinated'].includes(this.scenarioId)?{timeOfDay:'night',visibility:'reduced'}:{timeOfDay:'day',visibility:'clear'});message='Exercise selected; ready at 00:00.';break;
       case 'configure':if(active)return reject('Configuration can be edited only while ready.');if(!Number.isFinite(command.quietPeriod)||command.quietPeriod<0||command.quietPeriod>120||!Number.isInteger(command.swarmCount)||command.swarmCount<1||command.swarmCount>12||!Number.isFinite(command.pairDelay)||command.pairDelay<0||command.pairDelay>30)return reject('Quiet period 0–120 s, swarm 1–12, pair delay 0–30 s.');this.quietPeriod=command.quietPeriod;this.swarmCount=command.swarmCount;this.pairDelay=command.pairDelay;this.rebuild();message='Exercise configuration updated.';break;
+      case 'seed':if(active)return reject('Seed can be changed only while ready.');if(!Number.isInteger(command.seed)||command.seed<0||command.seed>2147483647)return reject('Seed must be an integer from 0 to 2147483647.');this.variantSeed=command.seed;this.rebuild();message=`Variant seed ${command.seed} selected.`;break;
       case 'speed':if(![1,2,4].includes(command.speed))return reject('Supported speeds: 1×, 2×, 4×.');this.speed=command.speed;message=`Speed ${this.speed}×.`;break;
-      case 'conditions':if(!['day','night'].includes(command.conditions.timeOfDay)||!['clear','reduced'].includes(command.conditions.visibility))return reject('Invalid conditions.');this.sim.setConditions(command.conditions);message=`${command.conditions.timeOfDay}, ${command.conditions.visibility} visibility.`;break;
+      case 'conditions':{
+        const weather=command.conditions.weather??this.sim.conditions.weather??this.trainingWeather;
+        if(!['day','night'].includes(command.conditions.timeOfDay)||!['clear','reduced'].includes(command.conditions.visibility)||!['clear','fog','rain'].includes(weather))return reject('Invalid conditions.');
+        this.trainingWeather=weather;this.sim.setConditions({...command.conditions,weather});message=`${command.conditions.timeOfDay}, ${command.conditions.visibility} visibility, ${weather} weather.`;break;
+      }
       case 'eo':if(!Number.isFinite(command.bearing)||!Number.isFinite(command.elevation)||command.elevation< -20||command.elevation>80)return reject('EO elevation must be −20° to 80°.');this.sensorEngine.setEO(command.bearing,command.elevation,command.zoom);message='EO bearing, elevation and zoom updated.';break;
       case 'step':{
         if(typeof location==='undefined'||!new URLSearchParams(location.search).has('qa'))return reject('Manual stepping is disabled in live training.');
         if(!Number.isFinite(command.seconds)||command.seconds<=0||command.seconds>300||!this.assetsReady||this.sim.status==='completed')return reject('QA stepping requires ready assets and 0–300 seconds.');
+        if(this.trainingMode==='assessment')this.eligibilityFlags.add('demo');
         if(this.sim.status==='ready')this.sim.start();else if(this.sim.status==='paused')this.sim.resume();
         let remaining=command.seconds;while(remaining>1e-10&&this.sim.status==='running'){const step=Math.min(FIXED_STEP,remaining);this.alpha=this.sim.advance(step);this.updateExercise();remaining-=step;}
         this.sim.pause('qa-step');message=`QA advanced ${command.seconds} simulation seconds.`;break;
@@ -179,10 +223,14 @@ export class SessionController implements SessionAdapter {
   };
   private updateExercise(){
     this.sensorEngine.update(this.sim.time,this.sim.entities.values(),this.sim.conditions);
-    this.sensorExercise.tick(this.sim.time,[...this.sensorEngine.tracks.values()],this.sensorEngine.observations);
+    this.sensorExercise.tick(this.sim.time,this.radarProjection(),this.sensorEngine.observations);
     if(this.sim.status==='completed'&&this.sensorExercise.state().status!=='completed')this.sensorExercise.act({type:'finish'});
   }
   getExerciseState(){return this.sensorExercise.state();}
+  getCompletedRecipe():ResolvedExerciseRecipe|undefined{
+    if(this.sim.status!=='completed')return undefined;
+    return {version:1,generation:{...this.resolvedGeneration},setting:this.environment.setting??'rural',sensorHealth:this.sensorEngine.getHealthSummary(),scenario:{...structuredClone(this.sim.config),conditions:{...this.sim.conditions}}};
+  }
   exerciseAction(action:ExerciseAction):CommandResult{
     if(this.sim.status!=='running')return {ok:false,message:'Start or resume the exercise before acting.'};
     if(action.type==='request-eo'){
@@ -207,16 +255,30 @@ export class SessionController implements SessionAdapter {
     const tick=(now:number)=>{const dt=Math.min(.25,Math.max(0,(now-previous)/1000));previous=now;
       if(this.sim.status==='running'){let remaining=dt*this.speed;while(remaining>1e-10&&this.sim.status==='running'){const step=Math.min(FIXED_STEP,remaining);this.alpha=this.sim.advance(step);this.updateExercise();remaining-=step;}}
       if(now-lastPublish>=100){this.refresh();lastPublish=now;}this.frame=requestAnimationFrame(tick);};this.frame=requestAnimationFrame(tick);
-    const visibility=()=>{this.sim.setHidden(document.hidden);previous=performance.now();this.refresh();};
-    const blur=()=>{this.sim.pause('window-blur');previous=performance.now();this.refresh();};
+    const visibility=()=>{if(document.hidden&&this.sim.status==='running'&&this.trainingMode==='assessment')this.eligibilityFlags.add('interrupted');this.sim.setHidden(document.hidden);previous=performance.now();this.refresh();};
+    const blur=()=>{if(this.sim.status==='running'&&this.trainingMode==='assessment')this.eligibilityFlags.add('interrupted');this.sim.pause('window-blur');previous=performance.now();this.refresh();};
     document.addEventListener('visibilitychange',visibility);window.addEventListener('blur',blur);this.cleanups.push(()=>document.removeEventListener('visibilitychange',visibility),()=>window.removeEventListener('blur',blur));
   }
   stopScheduler(){if(this.frame!==undefined)cancelAnimationFrame(this.frame);this.frame=undefined;for(const cleanup of this.cleanups)cleanup();this.cleanups=[];}
   pause(reason:string){if(this.sim.status==='running')this.command({type:'pause',reason});}
   notify(){this.refresh();}
+  reportStorageError(message?:string){if(this.storageError===message)return;this.storageError=message;this.refresh();}
+  recordInputMode(mode:'desktop'|'vr'){if(this.inputMode!==mode)this.inputModeTransitions.push({time:this.sim.time,mode});this.inputMode=mode;this.log('input-mode',`Input mode ${mode}.`,'operator');this.refresh();}
+  prepareTraining(settings:TrainingRunSettings,unlockedLevel:number):CommandResult{
+    if(this.sim.status!=='ready')return {ok:false,message:'Reset the previous session before selecting a curriculum exercise.'};
+    if(!settings.profileId||!['guided','practice','assessment','demo'].includes(settings.mode)||!['low-ingress','ambiguous','friendly','coordinated','mixed'].includes(settings.scenarioId)||!Number.isInteger(settings.level)||settings.level<0||settings.level>4||!Number.isInteger(settings.seed)||settings.seed<0||settings.seed>2147483647)return {ok:false,message:'Invalid curriculum configuration.'};
+    if(settings.mode==='assessment'&&(settings.level===0||settings.level>unlockedLevel))return {ok:false,message:'Complete the preceding competency assessments first.'};
+    this.profileId=settings.profileId;this.trainingMode=settings.mode;this.trainingLevel=settings.level;this.variantSeed=settings.seed;this.scenarioId=settings.scenarioId;this.exerciseId=settings.scenarioId;this.speed=1;
+    this.environmentSetting=settings.environmentSetting??this.environmentSetting;
+    this.environment=applyEnvironmentSetting(this.environment,this.environmentSetting);
+    this.trainingWeather=settings.weather??this.trainingWeather;
+    const conditions:Conditions=['ambiguous','coordinated'].includes(this.scenarioId)?{timeOfDay:'night',visibility:'reduced',weather:this.trainingWeather}:{timeOfDay:'day',visibility:'clear',weather:this.trainingWeather};
+    this.rebuild(conditions);this.refresh();return {ok:true,message:'Curriculum exercise prepared.'};
+  }
+  markInstructorAccess(){if(this.trainingMode==='assessment'&&this.sim.status!=='completed'){this.eligibilityFlags.add('instructor-modified');this.log('instructor-viewed','Instructor truth opened; assessment is ineligible for progression.','operator');this.refresh();}}
   setExercise(exercise:ExerciseId){
-    if(!['patrol','route-a','route-b','route-c','route-d','low-ingress','surveillance','penetration','swarm'].includes(exercise)||this.sim.status!=='ready')return {ok:false,message:'Select a valid exercise while ready.'};
-    this.exerciseId=exercise;if(['low-ingress','surveillance','penetration','swarm'].includes(exercise))this.scenarioId=exercise as TrainingScenarioId;
+    if(!['patrol','route-a','route-b','route-c','route-d','low-ingress','surveillance','penetration','swarm','ambiguous','friendly','coordinated','mixed'].includes(exercise)||this.sim.status!=='ready')return {ok:false,message:'Select a valid exercise while ready.'};
+    this.exerciseId=exercise;if(['low-ingress','surveillance','penetration','swarm','ambiguous','friendly','coordinated','mixed'].includes(exercise))this.scenarioId=exercise as TrainingScenarioId;
     this.rebuild();this.log('exercise-selected',`Exercise ${exercise} selected.`,'operator');this.refresh();return {ok:true,message:'Exercise selected.'};
   }
   observe(entityId:string|undefined,payload:Record<string,unknown>){if(this.sim.status==='completed')return;this.sim.observe(entityId,payload);this.refresh();}
@@ -226,7 +288,7 @@ export class SessionController implements SessionAdapter {
   getTraineeSnapshot(){return {time:this.sim.time,status:this.sim.status,conditions:{...this.sim.conditions},training:this.sim.trainingState(),postName:postById(this.postId).name};}
   exportSession(projection:'instructor'|'trainee'='instructor'){
     const training=this.sim.trainingState(),common={version:3,sessionId:this.snapshot.sessionId,projection,post:structuredClone(postById(this.postId)),seed:this.sim.config.seed,conditions:{...this.sim.conditions},elapsed:this.sim.time,status:this.sim.status,training};
-    if(projection==='trainee')return {...common,events:this.sim.events.filter(e=>['session-start','session-pause','session-resume','session-reset','observation','contact-detection','classification-submitted','response-selected','session-complete','conditions-change'].includes(e.type)).map(e=>({id:e.id,time:e.time,type:e.type,payload:Object.fromEntries(Object.entries(e.payload).filter(([key])=>['action','enabled','heading','zoom','position','bearing','elevation','acquired','contactId','classification','response','reason','seed','scenarioId','timeOfDay','visibility'].includes(key)).map(([key,value])=>[key,structuredClone(value)]))}))};
+    if(projection==='trainee')return {...common,events:this.sim.events.filter(e=>['session-start','session-pause','session-resume','session-reset','observation','contact-detection','classification-submitted','response-selected','session-complete','conditions-change'].includes(e.type)).map(e=>({id:e.id,time:e.time,type:e.type,payload:Object.fromEntries(Object.entries(e.payload).filter(([key])=>['action','enabled','heading','zoom','position','bearing','elevation','acquired','contactId','classification','response','reason','seed','scenarioId','timeOfDay','visibility','weather'].includes(key)).map(([key,value])=>[key,structuredClone(value)]))}))};
     return {...common,environment:{id:this.environment.id,regional:structuredClone(this.environment.regional),metadata:structuredClone(this.regionalMetadata),protectedZones:structuredClone(this.environment.protectedZones)},config:structuredClone(this.sim.config),events:structuredClone(this.sim.events),commandReceipts:structuredClone(this.events.filter(e=>e.type.startsWith('command-'))),sensorEvents:structuredClone(this.sensorEngine.events),sensorTracks:structuredClone([...this.sensorEngine.tracks.values()]),observer:structuredClone(this.observer)};
   }
 }

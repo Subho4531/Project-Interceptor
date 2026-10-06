@@ -39,6 +39,14 @@ function advanceUntil(
   }
 }
 
+function waitForCues(engine: ExerciseEngine, radar: SensorTrack[]): ReturnType<ExerciseEngine['state']>['tracks'] {
+  for (let time = 0; time <= 12; time += 0.25) {
+    engine.tick(time, radar, []);
+    if (engine.state().tracks.length === radar.length) return engine.state().tracks;
+  }
+  throw new Error('The seeded radar cues were not all delivered.');
+}
+
 describe('ExerciseEngine', () => {
   it('starts scored detection latency at first delivered cue, not hidden sensor time', () => {
     const engine = new ExerciseEngine({ seed: 19 });
@@ -177,5 +185,144 @@ describe('ExerciseEngine', () => {
     engine.act({ type: 'finish' });
     expect(engine.state().review?.criticalDecisionError).toBe(true);
     expect(engine.state().review?.scores.decisionQuality).toBe(0);
+  });
+
+  it('keeps friendly truth hidden until review and scores a restrained friendly assessment', () => {
+    const engine = new ExerciseEngine({ seed: 72, fixture: 'friendly' });
+    const radar = radarTrack();
+    const cue = waitForCue(engine, radar);
+    engine.act({ type: 'acknowledge-track', contactId: cue.id });
+    engine.act({ type: 'request-roster', contactId: cue.id });
+    advanceUntil(engine, state => state.selectedEvidence.some(item => item.source === 'roster'), radar);
+    engine.act({ type: 'set-object-type', contactId: cue.id, value: 'uav' });
+    engine.act({ type: 'set-coordination', contactId: cue.id, value: 'single' });
+    engine.act({ type: 'set-affiliation', contactId: cue.id, value: 'friendly' });
+    engine.act({ type: 'set-threat', contactId: cue.id, value: 'low' });
+    engine.act({ type: 'monitor', contactId: cue.id });
+
+    expect(JSON.stringify(engine.state())).not.toContain('groundTruth');
+    expect(engine.state().authorization).toEqual({});
+    engine.act({ type: 'finish' });
+    expect(engine.state().review?.groundTruth).toMatchObject({
+      objectType: 'uav', coordination: 'single', affiliation: 'friendly', threat: 'low',
+    });
+    expect(engine.state().review?.scores).toEqual({
+      detection: 100, classification: 100, threatAssessment: 100, decisionQuality: 100,
+    });
+  });
+
+  it.each(['ambiguous', 'false-return'] as const)(
+    'supports unknown or non-UAV assessments for the %s synthetic radar-only return', fixture => {
+      const radar = radarTrack('radar-synthetic-return', 'private-synthetic-entity');
+      const run = (objectType: 'unknown' | 'non-uav') => {
+        const engine = new ExerciseEngine({ seed: 515, fixture });
+        const cue = waitForCue(engine, radar);
+        engine.act({ type: 'acknowledge-track', contactId: cue.id });
+        engine.act({ type: 'request-eo', contactId: cue.id });
+        engine.act({ type: 'request-history', contactId: cue.id });
+        advanceUntil(engine, state =>
+          state.selectedEvidence.some(item => item.source === 'history') &&
+          state.selectedEvidence.some(item => item.source === 'eo'), radar);
+
+        const duringExercise = JSON.stringify(engine.state());
+        expect(duringExercise).not.toContain('groundTruth');
+        expect(duringExercise).not.toContain('private-synthetic-entity');
+        expect(engine.state().selectedEvidence.some(item => item.source === 'eo' && item.quality === 0)).toBe(true);
+        expect(engine.state().hypotheses[0].label).toBe('Possible non-airborne return');
+
+        engine.act({ type: 'set-object-type', contactId: cue.id, value: objectType });
+        engine.act({ type: 'set-coordination', contactId: cue.id, value: 'single' });
+        engine.act({ type: 'set-affiliation', contactId: cue.id, value: 'unconfirmed' });
+        engine.act({ type: 'set-threat', contactId: cue.id, value: 'low' });
+        engine.act({ type: 'report', contactId: cue.id });
+        engine.act({ type: 'finish' });
+        return engine.state();
+      };
+
+      for (const assessment of ['unknown', 'non-uav'] as const) {
+        const result = run(assessment);
+        expect(result.review?.groundTruth.objectType).toBe('non-uav');
+        expect(result.review?.scores.classification).toBe(100);
+        expect(result.review?.scores.threatAssessment).toBe(100);
+      }
+    },
+  );
+
+  it('scores coordinated contacts as one group objective from the first acknowledged lead', () => {
+    const engine = new ExerciseEngine({ seed: 808, fixture: 'coordinated' });
+    const radar = [radarTrack('radar-private-a', 'entity-private-a'), radarTrack('radar-private-b', 'entity-private-b')];
+    radar[1] = { ...radar[1], position: { x: -180, y: 52, z: 260 }, bearing: 325 };
+    const cues = waitForCues(engine, radar);
+    const lead = cues.find(cue => cue.id === 'C-01')!;
+    const other = cues.find(cue => cue.id !== lead.id)!;
+    engine.act({ type: 'acknowledge-track', contactId: lead.id });
+    engine.act({ type: 'acknowledge-track', contactId: other.id });
+    engine.act({ type: 'request-history', contactId: lead.id });
+    let time = engine.state().time;
+    for (let count = 0; count < 60 && engine.state().actions.filter(action => action.type === 'request-history' && action.outcome === 'recorded').length < 1; count += 1) {
+      time += 0.25;
+      engine.tick(time, radar, []);
+    }
+    engine.act({ type: 'set-object-type', contactId: lead.id, value: 'uav' });
+    engine.act({ type: 'set-coordination', contactId: lead.id, value: 'coordinated' });
+    engine.act({ type: 'set-affiliation', contactId: lead.id, value: 'unauthorized' });
+    engine.act({ type: 'set-threat', contactId: lead.id, value: 'high' });
+    engine.act({ type: 'report', contactId: lead.id });
+    expect(JSON.stringify(engine.state())).not.toContain('groundTruth');
+    engine.act({ type: 'finish' });
+
+    expect(engine.state().review?.groundTruth.contacts).toHaveLength(2);
+    expect(engine.state().review?.groundTruth.contacts.every(contact => contact.coordination === 'coordinated')).toBe(true);
+    expect(engine.state().review?.scores.detection).toBe(100);
+    expect(engine.state().review?.scores.classification).toBe(100);
+    expect(engine.state().review?.scores.threatAssessment).toBe(100);
+    expect(engine.state().review?.scores.decisionQuality).toBe(100);
+    expect(engine.state().actions.filter(action => action.type === 'report')).toEqual([
+      expect.objectContaining({ contactId: lead.id }),
+    ]);
+    expect(engine.state().review?.reasons.classification).toContain('first acknowledged contact is the group lead');
+  });
+
+  it('assigns mixed contacts by stable neutral ordinal and returns evidence from each contact profile', () => {
+    const engine = new ExerciseEngine({ seed: 190, fixture: 'mixed' });
+    // The incoming order deliberately disagrees with sorted sensor-key order.
+    const radar = [radarTrack('radar-z-private', 'private-z'), radarTrack('radar-a-private', 'private-a')];
+    radar[1] = { ...radar[1], position: { x: -120, y: 45, z: 240 }, bearing: 333 };
+    const cues = waitForCues(engine, radar);
+    const first = cues.find(cue => cue.id === 'C-01')!;
+    const second = cues.find(cue => cue.id === 'C-02')!;
+    expect(engine.act({ type: 'request-roster', contactId: first.id })).toBe(true);
+    expect(engine.act({ type: 'request-roster', contactId: second.id })).toBe(true);
+    let time = engine.state().time;
+    for (let count = 0; count < 60 && engine.state().actions.filter(action => action.type === 'request-roster' && action.outcome === 'recorded').length < 2; count += 1) {
+      time += 0.25;
+      engine.tick(time, radar, []);
+    }
+    expect(JSON.stringify(engine.state())).not.toContain('groundTruth');
+    expect(JSON.stringify(engine.state())).not.toContain('private-a');
+    expect(engine.state().evidenceByContact[first.id].some(item => item.summary.includes('matches this contact'))).toBe(true);
+    expect(engine.state().evidenceByContact[second.id].some(item => item.summary.includes('marks this contact unauthorized'))).toBe(true);
+    engine.act({ type: 'finish' });
+
+    const contacts = engine.state().review?.groundTruth.contacts ?? [];
+    expect(contacts.find(contact => contact.contactId === 'C-01')).toMatchObject({
+      objectType: 'uav', coordination: 'multiple-independent', affiliation: 'friendly', threat: 'low',
+    });
+    expect(contacts.find(contact => contact.contactId === 'C-02')).toMatchObject({
+      objectType: 'uav', coordination: 'multiple-independent', affiliation: 'unauthorized', threat: 'medium',
+    });
+  });
+
+  it('resolves seeded fixtures, evidence timing and after-action truth reproducibly', () => {
+    const run = () => {
+      const engine = new ExerciseEngine({ seed: 90210, fixture: 'seeded' });
+      const radar = radarTrack();
+      const cue = waitForCue(engine, radar);
+      engine.act({ type: 'request-history', contactId: cue.id });
+      advanceUntil(engine, state => state.selectedEvidence.some(item => item.source === 'history'), radar);
+      engine.act({ type: 'finish' });
+      return engine.state();
+    };
+    expect(run()).toEqual(run());
   });
 });

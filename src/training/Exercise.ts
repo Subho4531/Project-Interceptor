@@ -6,6 +6,15 @@ export type ExerciseCoordination = 'single' | 'multiple-independent' | 'coordina
 export type ExerciseAffiliation = 'friendly' | 'unauthorized' | 'unconfirmed';
 export type ExerciseThreat = 'low' | 'medium' | 'high' | 'critical';
 export type ExerciseEvidenceSource = 'radar' | 'eo' | 'rf' | 'roster' | 'history' | 'authorization';
+/** Authored sensor exercise profile. `seeded` selects one profile reproducibly. */
+export type ExerciseFixtureId = 'basic' | 'friendly' | 'ambiguous' | 'false-return' | 'coordinated' | 'mixed' | 'seeded';
+
+export interface ExerciseTruth {
+  objectType: ExerciseObjectType;
+  coordination: ExerciseCoordination;
+  affiliation: ExerciseAffiliation;
+  threat: ExerciseThreat;
+}
 
 export interface ExerciseTrack {
   /** Exercise-local neutral identifier. Never a sensor or simulation identifier. */
@@ -90,7 +99,8 @@ export interface ExerciseReview {
   reasons: { detection: string; classification: string; threatAssessment: string; decisionQuality: string };
   chronology: ExerciseEvent[];
   summary: string;
-  groundTruth: { objectType: ExerciseObjectType; coordination: ExerciseCoordination; affiliation: ExerciseAffiliation; threat: ExerciseThreat };
+  /** Kept at the root for existing review clients; contacts contains the full authored truth. */
+  groundTruth: ExerciseTruth & { contacts: Array<{ contactId: string } & ExerciseTruth> };
 }
 
 export interface ExerciseState {
@@ -99,6 +109,8 @@ export interface ExerciseState {
   tracks: ExerciseTrack[];
   selectedContactId?: string;
   selectedEvidence: ExerciseEvidence[];
+  evidenceByContact: Record<string, ExerciseEvidence[]>;
+  chronology: ExerciseEvent[];
   assessments: Record<string, ExerciseAssessment>;
   actions: ExerciseActionRecord[];
   hypotheses: AssistantHypothesis[];
@@ -111,10 +123,10 @@ export interface ExerciseEngineOptions {
   seed?: number;
   quietPeriod?: number;
   /** Test and authored-fixture hook; the default is Basic Detection. */
-  fixture?: 'basic' | 'friendly';
+  fixture?: ExerciseFixtureId;
 }
 
-type Fixture = 'basic' | 'friendly';
+type Fixture = Exclude<ExerciseFixtureId, 'seeded'>;
 type RequestType = 'request-eo' | 'request-rf' | 'request-roster' | 'request-history';
 type PendingTask =
   | { kind: 'radar-cue'; dueAt: number; sequence: number; contactId: string; sensorKey: string }
@@ -127,7 +139,17 @@ interface InternalContact {
   latestRadar: SensorTrack;
   firstEvidenceTime?: number;
   acknowledgedAt?: number;
+  truth: ExerciseTruth;
+  fixture: Fixture;
 }
+
+/**
+ * A tick accepts SensorEngine-compatible radar projections. A training-only return
+ * (for example, a false radar return) may be supplied as a synthetic SensorTrack;
+ * use unique private sensor/entity IDs and omit an EO observation when it has no
+ * visual correlate. Those IDs are never copied to the trainee projection.
+ */
+export type ExerciseRadarInput = SensorTrack;
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 const roundScore = (value: number) => Math.round(Math.max(0, Math.min(100, value)) * 100) / 100;
@@ -136,6 +158,22 @@ function hashSeed(seed: number, key: string): number {
   for (let index = 0; index < key.length; index += 1) hash = Math.imul(hash ^ key.charCodeAt(index), 16777619);
   hash ^= hash << 13; hash ^= hash >>> 17; hash ^= hash << 5;
   return hash >>> 0;
+}
+const authoredFixtures: readonly Fixture[] = ['basic', 'friendly', 'ambiguous', 'coordinated'];
+function resolveFixture(fixture: ExerciseFixtureId | undefined, seed: number): Fixture {
+  if (!fixture || fixture === 'basic') return 'basic';
+  if (fixture === 'seeded') return authoredFixtures[hashSeed(seed, 'exercise-fixture') % authoredFixtures.length];
+  return fixture;
+}
+function truthFor(fixture: Fixture): ExerciseTruth {
+  switch (fixture) {
+    case 'friendly': return { objectType: 'uav', coordination: 'single', affiliation: 'friendly', threat: 'low' };
+    case 'mixed': return { ...truthFor('friendly'), coordination: 'multiple-independent' };
+    case 'ambiguous':
+    case 'false-return': return { objectType: 'non-uav', coordination: 'single', affiliation: 'unconfirmed', threat: 'low' };
+    case 'coordinated': return { objectType: 'uav', coordination: 'coordinated', affiliation: 'unauthorized', threat: 'high' };
+    default: return { objectType: 'uav', coordination: 'single', affiliation: 'unauthorized', threat: 'medium' };
+  }
 }
 function isRequest(type: ExerciseAction['type']): type is RequestType {
   return type === 'request-eo' || type === 'request-rf' || type === 'request-roster' || type === 'request-history';
@@ -177,10 +215,10 @@ export class ExerciseEngine {
   constructor(options: ExerciseEngineOptions = {}) {
     this.seed = Number.isFinite(options.seed) ? Math.trunc(options.seed!) : 26052;
     this.quietPeriod = Number.isFinite(options.quietPeriod) ? Math.max(0, options.quietPeriod!) : 0;
-    this.fixture = options.fixture ?? 'basic';
+    this.fixture = resolveFixture(options.fixture, this.seed);
   }
 
-  tick(time: number, radarTracks: SensorTrack[], eoObservations: SensorObservation[]): void {
+  tick(time: number, radarTracks: ExerciseRadarInput[], eoObservations: SensorObservation[]): void {
     if (this.currentStatus === 'completed' || !Number.isFinite(time)) return;
     this.currentTime = Math.max(this.currentTime, Math.max(0, time));
     this.currentStatus = 'running';
@@ -211,6 +249,8 @@ export class ExerciseEngine {
       tracks: [...this.publicTracks.values()].map(track => ({ ...track })),
       selectedContactId: this.selectedContactId,
       selectedEvidence,
+      evidenceByContact: Object.fromEntries([...this.evidenceByContact].map(([id,items])=>[id,items.map(item=>({...item}))])),
+      chronology: this.events.map(event=>({...event})),
       assessments,
       actions: this.actions.map(action => ({ ...action })),
       hypotheses: this.buildHypotheses(),
@@ -219,7 +259,8 @@ export class ExerciseEngine {
     };
     if (this.review) state.review = {
       ...this.review, scores: { ...this.review.scores }, reasons: { ...this.review.reasons },
-      chronology: this.review.chronology.map(event => ({ ...event })), groundTruth: { ...this.review.groundTruth },
+      chronology: this.review.chronology.map(event => ({ ...event })),
+      groundTruth: { ...this.review.groundTruth, contacts: this.review.groundTruth.contacts.map(contact => ({ ...contact })) },
     };
     return state;
   }
@@ -263,8 +304,8 @@ export class ExerciseEngine {
       else if (action.type === 'set-affiliation') assessment.affiliation = action.value;
       else assessment.threat = action.value;
       this.assessments.set(contact.contactId, assessment);
-      this.recordAction(action.type, contact.contactId, 'Assessment field recorded.', 'recorded');
-      this.recordEvent('assessment-updated', contact.contactId, 'The trainee revised an assessment field.');
+      this.recordAction(action.type, contact.contactId, `${action.type.replace('set-','')}: ${action.value}.`, 'recorded');
+      this.recordEvent('assessment-updated', contact.contactId, `${action.type.replace('set-','')}: ${action.value}.`);
       return true;
     }
 
@@ -316,7 +357,7 @@ export class ExerciseEngine {
         : action.type === 'alert' ? 'Local alert raised.' : 'Contact placed under continued monitoring.';
       this.recordAction(action.type, contact?.contactId, summary, 'recorded');
       this.recordEvent('decision', contact?.contactId, summary);
-      if (action.type === 'alert' && this.fixture === 'friendly') this.criticalDecisionError = true;
+      if (action.type === 'alert' && (this.fixture === 'friendly' || contact?.truth.affiliation === 'friendly')) this.criticalDecisionError = true;
       return true;
     }
     return false;
@@ -326,8 +367,14 @@ export class ExerciseEngine {
     let contact = this.internalBySensorKey.get(track.id);
     if (!contact) {
       if (track.state === 'lost') return;
-      const id = 'C-' + String(++this.contactSequence).padStart(2, '0');
-      contact = { contactId: id, entityId: track.entityId, latestRadar: track };
+      const ordinal = ++this.contactSequence;
+      const id = 'C-' + String(ordinal).padStart(2, '0');
+      // Mixed contacts alternate on neutral sorted contact ordinal, never on a
+      // simulation/entity identifier. A coordinated fixture shares one group truth.
+      const fixture: Fixture = this.fixture === 'mixed' ? ordinal % 2 === 1 ? 'friendly' : 'basic' : this.fixture;
+      const truth = truthFor(fixture);
+      if (this.fixture === 'mixed') truth.coordination = 'multiple-independent';
+      contact = { contactId: id, entityId: track.entityId, latestRadar: track, fixture, truth };
       this.internalBySensorKey.set(track.id, contact);
       this.internalByContactId.set(id, contact);
       this.assessments.set(id, {});
@@ -381,33 +428,54 @@ export class ExerciseEngine {
     if (!this.internalByContactId.has(task.contactId)) return;
     const observation = task.request === 'request-eo' ? this.latestEOByEntity.get(task.entityId) : undefined;
     let evidence: ExerciseEvidence;
+    const contact = this.internalByContactId.get(task.contactId)!;
     if (task.request === 'request-eo') {
       evidence = observation ? {
         id: 'E-' + String(++this.evidenceSequence).padStart(3, '0'), source: 'eo',
         captureTime: observation.time, deliveryTime: this.currentTime,
-        summary: 'EO acquired an unclassified visual contact. Object type and affiliation remain unconfirmed.', quality: 0.65,
+        summary: contact.fixture === 'ambiguous'
+          ? 'EO acquired a low-contrast visual return; the silhouette is insufficient to distinguish an airborne object from background clutter.'
+          : 'EO acquired an unclassified visual contact. Object type and affiliation remain unconfirmed.',
+        quality: contact.fixture === 'ambiguous' ? 0.3 : 0.65,
       } : {
         id: 'E-' + String(++this.evidenceSequence).padStart(3, '0'), source: 'eo',
         captureTime: this.currentTime, deliveryTime: this.currentTime,
-        summary: 'EO did not acquire the contact during this request; this does not establish that it is absent.', quality: 0,
+        summary: contact.fixture === 'ambiguous' || contact.fixture === 'false-return'
+          ? 'EO found no visual correlate for this radar return. A radar-only plot may be clutter; non-acquisition alone does not prove the object type.'
+          : 'EO did not acquire the contact during this request; this does not establish that it is absent.', quality: 0,
       };
     } else {
       const summaries: Record<'request-rf' | 'request-roster' | 'request-history', string> = {
-        'request-rf': this.fixture === 'friendly'
+        'request-rf': contact.fixture === 'friendly'
           ? 'Fictional telemetry was detected; its source is consistent with authorized training activity.'
-          : 'RF returns were inconclusive and do not establish affiliation or intent.',
-        'request-roster': this.fixture === 'friendly'
+          : contact.fixture === 'coordinated'
+            ? 'Several fictional RF signatures share a repeating timing pattern; this supports coordination but does not establish intent.'
+            : contact.fixture === 'ambiguous' || contact.fixture === 'false-return'
+              ? 'No coherent RF emission was detected. This does not establish whether the radar return is airborne or identify affiliation.'
+              : 'RF returns were inconclusive and do not establish affiliation or intent.',
+        'request-roster': contact.fixture === 'friendly'
           ? 'A fictional authorization record matches this contact and the current exercise window.'
-          : 'A fictional roster record marks this contact unauthorized; this supports affiliation assessment but does not establish intent.',
-        'request-history': this.fixture === 'friendly'
+          : contact.fixture === 'ambiguous' || contact.fixture === 'false-return'
+            ? 'No fictional authorization record matches this return; the roster cannot identify radar clutter, and absence of a match does not establish unauthorized activity.'
+            : 'A fictional roster record marks this contact unauthorized; this supports affiliation assessment but does not establish intent.',
+        'request-history': contact.fixture === 'friendly'
           ? 'A similar contact appears in prior authorized exercise history.'
-          : 'No prior correlated contact history was available for comparison.',
+          : contact.fixture === 'coordinated'
+            ? 'Multiple contacts show matched route timing and paired changes in direction. This supports coordination, not shared intent.'
+            : contact.fixture === 'ambiguous' || contact.fixture === 'false-return'
+              ? 'A fictional history comparison links this intermittent return to a stationary terrain reflection; no airborne correlate is confirmed.'
+              : 'No prior correlated contact history was available for comparison.',
       };
       const source: ExerciseEvidenceSource = task.request === 'request-rf' ? 'rf' : task.request === 'request-roster' ? 'roster' : 'history';
       evidence = {
         id: 'E-' + String(++this.evidenceSequence).padStart(3, '0'), source,
         captureTime: this.currentTime, deliveryTime: this.currentTime,
-        summary: summaries[task.request], quality: task.request === 'request-roster' ? 0.9 : 0.5,
+        summary: summaries[task.request],
+        quality: task.request === 'request-roster' && contact.fixture === 'friendly' ? 0.9
+          : (contact.fixture === 'ambiguous' || contact.fixture === 'false-return') && task.request === 'request-history'
+            ? (hashSeed(this.seed, `clue:${contact.contactId}`) % 2 ? 0.65 : 0.8)
+            : task.request === 'request-history' && contact.fixture === 'coordinated' ? 0.85
+              : task.request === 'request-roster' && contact.fixture !== 'ambiguous' && contact.fixture !== 'false-return' ? 0.9 : 0.5,
       };
     }
     this.evidenceByContact.get(task.contactId)!.push(evidence);
@@ -417,7 +485,8 @@ export class ExerciseEngine {
   }
 
   private deliverAuthorization(task: Extract<PendingTask, { kind: 'authorization' }>): void {
-    const outcome = this.fixture === 'friendly' ? 'denied' : 'granted';
+    const contact = this.internalByContactId.get(task.contactId);
+    const outcome = contact?.truth.objectType === 'uav' && contact.truth.affiliation === 'unauthorized' ? 'granted' : 'denied';
     this.authorizationByContact.set(task.contactId, outcome);
     const action = [...this.actions].reverse().find(item => item.type === 'authorization' && item.contactId === task.contactId && item.outcome === 'pending');
     if (action) {
@@ -509,6 +578,14 @@ export class ExerciseEngine {
         contactId: track.id, label: 'Unconfirmed aerial activity', confidence: 'moderate',
         basis: 'A fictional roster result supports an unauthorized status; intent and threat remain separate questions.',
       };
+      if (evidence.some(item => item.summary.includes('stationary terrain reflection'))) return {
+        contactId: track.id, label: 'Possible non-airborne return', confidence: 'moderate',
+        basis: 'A fictional history comparison links the intermittent radar return to a terrain reflection; continue to weigh the sensor limits.',
+      };
+      if (evidence.some(item => item.summary.includes('supports coordination'))) return {
+        contactId: track.id, label: 'Possible coordinated activity', confidence: 'moderate',
+        basis: 'Multiple contacts share route timing; this supports coordination but does not establish intent.',
+      };
       if (hasEO) return {
         contactId: track.id, label: 'Possible UAV', confidence: 'moderate',
         basis: 'EO acquired an unclassified visual contact; affiliation and intent remain unconfirmed.',
@@ -539,15 +616,21 @@ export class ExerciseEngine {
     });
     const detection = detectionScores.length
       ? roundScore(detectionScores.reduce((sum, score) => sum + score, 0) / detectionScores.length) : 0;
+    const coordinatedLead = this.coordinatedLead();
     const classification = contacts.length
-      ? roundScore(contacts.reduce((sum, track) => sum + this.scoreClassification(track), 0) / contacts.length) : 0;
+      ? this.fixture === 'coordinated'
+        ? roundScore(coordinatedLead ? this.scoreClassification(coordinatedLead) : 0)
+        : roundScore(contacts.reduce((sum, track) => sum + this.scoreClassification(track), 0) / contacts.length) : 0;
     const threatAssessment = contacts.length
-      ? roundScore(contacts.reduce((sum, track) => sum + this.scoreThreat(track), 0) / contacts.length) : 0;
+      ? this.fixture === 'coordinated'
+        ? roundScore(coordinatedLead ? this.scoreThreat(coordinatedLead) : 0)
+        : roundScore(contacts.reduce((sum, track) => sum + this.scoreThreat(track), 0) / contacts.length) : 0;
     const decisionQuality = this.scoreDecisionQuality();
     const overall = roundScore(detection * 0.25 + classification * 0.3 + threatAssessment * 0.2 + decisionQuality * 0.25);
     const first = contacts[0];
     const firstAck = first ? this.acknowledgementTimes.get(first.id) : undefined;
     const latency = first && firstAck !== undefined ? roundScore(Math.max(0, firstAck - first.firstEvidenceTime)) : undefined;
+    const leadTruth = first ? this.internalByContactId.get(first.id)?.truth ?? truthFor(this.fixture) : truthFor(this.fixture);
     return {
       scores: { detection, classification, threatAssessment, decisionQuality }, overall,
       detectionLatencySeconds: latency, criticalDecisionError: this.criticalDecisionError,
@@ -555,45 +638,64 @@ export class ExerciseEngine {
         detection: detection === 100
           ? 'Acknowledged within five simulation seconds of first delivered evidence.'
           : 'Latency is measured from first delivered evidence until acknowledgement.',
-        classification: 'Object type, coordination and affiliation are scored separately; unconfirmed status is accepted when decisive evidence is unavailable.',
+        classification: this.fixture === 'coordinated'
+          ? 'The first acknowledged contact is the group lead; its evidence-based assessment applies to the coordinated group, which is reported once.'
+          : 'Object type, coordination and affiliation are scored separately; unconfirmed status is accepted when decisive evidence is unavailable.',
         threatAssessment: 'Threat assessment is scored independently from object type and affiliation.',
         decisionQuality: this.criticalDecisionError
           ? 'A response was attempted without command authorization or an alert was raised for the friendly fixture; decision quality is zero.'
+          : this.fixture === 'coordinated'
+            ? 'One verified, proportionate group report on the first acknowledged lead contact completes the group response objective.'
           : 'Verification, proportionate action and follow-through contribute 30, 40 and 30 points.',
       },
       chronology: this.events.map(event => ({ ...event })),
       summary: 'Review the evidence timeline, acknowledge contacts promptly, separate classification from threat, and choose a proportionate high-level action.',
-      groundTruth: { objectType:'uav', coordination:'single', affiliation:this.fixture==='friendly'?'friendly':'unauthorized', threat:this.fixture==='friendly'?'low':'medium' },
+      groundTruth: {
+        ...leadTruth,
+        contacts: contacts.map(track => ({ contactId: track.id, ...(this.internalByContactId.get(track.id)?.truth ?? truthFor(this.fixture)) })),
+      },
     };
   }
 
   private scoreClassification(track: ExerciseTrack): number {
     const assessment = this.assessments.get(track.id) ?? {};
     const evidence = this.evidenceByContact.get(track.id) ?? [];
-    const hasEO = evidence.some(item => item.source === 'eo' && item.quality !== 0);
-    const hasRoster = evidence.some(item => item.source === 'roster');
-    const objectScore = assessment.objectType === 'uav' ? 100 : assessment.objectType === 'unknown' && !hasEO ? 100 : 0;
-    const coordinationScore = assessment.coordination === 'single' && this.publicTracks.size === 1
-      ? 100 : assessment.coordination === 'unknown' && this.publicTracks.size !== 1 ? 100 : 0;
-    const expectedAffiliation = this.fixture === 'friendly' ? 'friendly' : 'unauthorized';
-    const affiliationScore = assessment.affiliation === expectedAffiliation
-      ? 100 : assessment.affiliation === 'unconfirmed' && !hasRoster ? 100 : 0;
+    const truth = this.internalByContactId.get(track.id)?.truth ?? truthFor(this.fixture);
+    const hasDecisiveEO = evidence.some(item => item.source === 'eo' && (item.quality ?? 0) >= 0.6);
+    const objectScore = assessment.objectType === truth.objectType ? 100
+      : assessment.objectType === 'unknown' && (truth.objectType === 'non-uav' || !hasDecisiveEO) ? 100 : 0;
+    const hasCoordinationClue = evidence.some(item => item.source === 'history' && item.summary.includes('supports coordination'));
+    const coordinationScore = assessment.coordination === truth.coordination && (truth.coordination !== 'coordinated' || hasCoordinationClue)
+      ? 100 : assessment.coordination === 'unknown' && (truth.coordination !== 'coordinated' || !hasCoordinationClue) ? 100 : 0;
+    const hasAffiliationEvidence = evidence.some(item => item.source === 'roster' && (item.quality ?? 0) >= 0.8);
+    const affiliationScore = assessment.affiliation === truth.affiliation
+      ? 100 : assessment.affiliation === 'unconfirmed' && !hasAffiliationEvidence ? 100 : 0;
     return objectScore * 0.5 + coordinationScore * 0.3 + affiliationScore * 0.2;
   }
 
   private scoreThreat(track: ExerciseTrack): number {
     const threat = this.assessments.get(track.id)?.threat;
-    const expected: ExerciseThreat = this.fixture === 'friendly' ? 'low' : 'medium';
+    const expected = (this.internalByContactId.get(track.id)?.truth ?? truthFor(this.fixture)).threat;
     if (threat === expected) return 100;
-    if (this.fixture === 'friendly' && threat === 'medium') return 50;
-    if (this.fixture === 'basic' && (threat === 'low' || threat === 'high')) return 50;
+    const order: ExerciseThreat[] = ['low', 'medium', 'high', 'critical'];
+    if (threat && Math.abs(order.indexOf(threat) - order.indexOf(expected)) === 1) return 50;
     return 0;
+  }
+
+  private coordinatedLead(): ExerciseTrack | undefined {
+    const first = [...this.acknowledgementTimes.entries()]
+      .sort(([leftId,leftTime],[rightId,rightTime]) => leftTime-rightTime || Number(leftId.slice(2))-Number(rightId.slice(2)))[0];
+    return first ? this.publicTracks.get(first[0]) : undefined;
   }
 
   private scoreDecisionQuality(): number {
     if (this.criticalDecisionError) return 0;
-    const types = new Set(this.actions.map(action => action.type));
-    const verification = this.verificationContacts.size > 0 || [...types].some(isRequest);
+    const leadId = this.fixture === 'coordinated' ? this.coordinatedLead()?.id : undefined;
+    const objectiveActions = leadId ? this.actions.filter(action => action.contactId === leadId) : this.actions;
+    const types = new Set(objectiveActions.map(action => action.type));
+    const verification = leadId
+      ? this.verificationContacts.has(leadId) || objectiveActions.some(action => isRequest(action.type))
+      : this.verificationContacts.size > 0 || [...types].some(isRequest);
     const proportionate = this.fixture === 'friendly'
       ? types.has('monitor') ? 40 : types.has('report') ? 20 : 0
       : types.has('report') ? 40

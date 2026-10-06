@@ -1,6 +1,6 @@
 import type { EnvironmentConfig, ScenarioConfig, ExerciseId, LandscapePlacement } from './types';
 import { terrainHeight } from './world';
-import { createTrainingScenario, trainingScenarios } from './trainingScenarios';
+import { createTrainingScenario, trainingScenarios, sensorScenarios } from './trainingScenarios';
 export const environment: EnvironmentConfig = {
   id: 'rural-post-07', label: 'Rural border post', description: 'Open fields, wooded hills and a roadside checkpoint.',
   terrain: { size: 2400, subdivisions: 240, profile: 'rural', tint: '#b8b59a' },
@@ -39,11 +39,12 @@ export const environments: EnvironmentConfig[] = [environment,
   { ...environment, id: 'rocky-valley', label: 'Rocky valley', description: 'A dry border crossing between rocky escarpments and scanned boulder fields.', terrain: { ...environment.terrain, profile: 'valley', tint: '#c7ae83' }, bounds: { minX: -210, maxX: 210, minZ: -170, maxZ: 300 }, vegetation: { trees: 9, shrubs: 22 }, scenery: [...valleyScenery, ...rockPlacements()] },
 ];
 export const exercises: { id: ExerciseId; label: string; group: 'training' | 'familiarisation' }[] = [
+  ...sensorScenarios.map(s => ({id:s.id,label:`${s.definition.briefing.code} · ${s.definition.briefing.title}`,group:'training' as const})),
   ...trainingScenarios.map(s => ({id:s.id,label:`${s.definition.briefing.code} · ${s.definition.briefing.title}`,group:'training' as const})),
   ...[{ id: 'patrol' as const, label: 'Rotating patrol · four passes' }, { id: 'route-a' as const, label: 'Route A' }, { id: 'route-b' as const, label: 'Route B' }, { id: 'route-c' as const, label: 'Route C' }, { id: 'route-d' as const, label: 'Route D' }].map(e => ({...e,group:'familiarisation' as const}))
 ];
 export function createScenario(config: EnvironmentConfig, exercise: ExerciseId = 'patrol'): ScenarioConfig {
-  if (trainingScenarios.some(s => s.id === exercise)) return createTrainingScenario(config,exercise as Parameters<typeof createTrainingScenario>[1]);
+  if ([...trainingScenarios,...sensorScenarios].some(s => s.id === exercise)) return createTrainingScenario(config,exercise as Parameters<typeof createTrainingScenario>[1]);
   const route = [{ x: -160, y: 24, z: 135 }, { x: -45, y: 22, z: 80 }, { x: 0, y: 19, z: 35 }, { x: 80, y: 26, z: 65 }, { x: 190, y: 32, z: 150 }];
   const variants = [
     { id: 'route-a', assetId: 'sketchfab-fpv', speed: 8, altitude: 0 },

@@ -56,7 +56,7 @@ export default function SensorConsole({ snapshot, postId, sessionStatus, assetsR
     <header className="sensor-topbar">
       <div className="sensor-brand"><span className="sensor-brand-mark">⌖</span><span><strong>PROJECT INTERCEPTOR</strong><small>TRAINEE / SENSOR CONSOLE</small></span></div>
       <div className="sensor-session"><span>{post.name.toUpperCase()} · {post.region.toUpperCase()}</span><b>{sessionStatus.toUpperCase()}</b><time>{clock(snapshot.time)}</time></div>
-      <nav aria-label="Session views"><button onClick={onOpenObserver}>Ground observer ↗</button><button onClick={onOpenDashboard}>Instructor ↗</button></nav>
+      <nav aria-label="Session views"><button onClick={onOpenObserver}>Ground observer ↗</button><button onClick={onOpenDashboard}>Open dashboard ↗</button></nav>
     </header>
     {sessionStatus === 'ready' && <section className="sensor-briefing" aria-label="Exercise briefing">
       <span className="sensor-kicker">LEVEL 01 / BASIC DETECTION</span><h1>Monitor the post. Assess what the sensors reveal.</h1>
@@ -84,7 +84,7 @@ export default function SensorConsole({ snapshot, postId, sessionStatus, assetsR
       </section>
       <section className="sensor-panel sensor-evidence" aria-label="Investigation"><div className="sensor-panel-heading"><span>03 / INVESTIGATION</span><span>OBSERVED EVIDENCE</span></div>
         {!selected?.acknowledged ? <div className="sensor-empty">Acknowledge a return to open its investigation record.</div> : <>
-          <div className="sensor-investigate">{([['request-eo', 'Cue EO'], ['request-rf', 'Check RF'], ['request-roster', 'Check flight roster'], ['request-history', 'Movement history']] as const).map(([type,label])=><button key={type} disabled={sessionStatus !== 'running'} onClick={() => action(type,selected.id)}>{label} ↗</button>)}</div>
+          <div className="sensor-investigate">{([['request-eo', 'Cue EO / thermal'], ['request-rf', 'Check RF'], ['request-roster', 'Check flight roster'], ['request-history', 'Movement history']] as const).map(([type,label])=><button key={type} disabled={sessionStatus !== 'running'} onClick={() => action(type,selected.id)}>{label} ↗</button>)}</div>
           <ol className="sensor-evidence-list">{evidence.length ? evidence.map(item => <li key={item.id}><time>{clock(item.deliveryTime)}</time><strong>{item.source.toUpperCase()}</strong><span>{item.summary}<small>Captured {clock(item.captureTime)} · delivered {clock(item.deliveryTime)}</small></span></li>) : <li><span>Radar acknowledgement logged. Request more evidence before deciding.</span></li>}</ol>
         </>}
       </section>

@@ -9,6 +9,7 @@ import { appLink } from '../routing';
 import RegionalCredits from '../ui/RegionalCredits';
 import './dashboard.css';
 const EOPanel=lazy(()=>import('./EOPanel'));
+const SensorWall=lazy(()=>import('./SensorWall'));
 const formatTime=(t:number)=>Math.floor(t/60).toString().padStart(2,'0')+':'+Math.floor(t%60).toString().padStart(2,'0');
 type Message={id:number;role:'assistant'|'user';text:string};
 export default function Dashboard() {
@@ -16,6 +17,7 @@ export default function Dashboard() {
   const [selected,setSelected]=useState<SelectedObject>({type:'post',id:snapshot.postId});
   const [layers,setLayers]=useState<MapLayers>({routes:false,trails:true,coverage:true,zones:true,grid:false,truth:true,radar:true,eo:true});
   const [basemap,setBasemap]=useState<Basemap>('regional'),[focus,setFocus]=useState(0),[overview,setOverview]=useState(false);
+  const [workspaceView,setWorkspaceView]=useState<'sensors'|'map'>('sensors');
   const [search,setSearch]=useState(''),[dockOpen,setDockOpen]=useState(true),[objectsOpen,setObjectsOpen]=useState(false),[eoOpen,setEOOpen]=useState(false),[setupOpen,setSetupOpen]=useState(false);
   const [notice,setNotice]=useState(''),[input,setInput]=useState(''),[pending,setPending]=useState<AssistantReply|null>(null);
   const [messages,setMessages]=useState<Message[]>([{id:0,role:'assistant',text:'I’m SAARTHI. This console controls the shared training session. Instructor truth, simulated radar tracks and EO observations are separate layers. Select a post and exercise, then start when assets are ready.'}]);
@@ -34,7 +36,7 @@ export default function Dashboard() {
   }
   function select(object:SelectedObject) {
     if(object.type==='post'&&object.id!==snapshot.postId&&!command({type:'post',postId:object.id}).ok) return;
-    if(object.type==='sensor'&&object.id==='eo') setEOOpen(true);
+    if(object.type==='sensor'&&object.id==='eo') setWorkspaceView('sensors');
     setSelected(object);setOverview(false);setFocus(v=>v+1);setObjectsOpen(false);
   }
   function addMessage(role:Message['role'],text:string) {setMessages(current=>[...current,{id:++messageId.current,role,text}].slice(-60));}
@@ -79,9 +81,9 @@ export default function Dashboard() {
         <div className="object-panel-note"><span className="dash-kicker">FICTIONAL EXERCISE</span><p>Real regional elevation and imagery. Compounds, routes and sensor parameters are training configurations.</p><small>Geranium asset: noncommercial / ShareAlike.</small></div>
       </aside>
       <div className="map-stage">
-        <div className="map-toolbar"><button className="objects-toggle" onClick={()=>setObjectsOpen(v=>!v)} aria-expanded={objectsOpen}>Objects</button><div className="basemap-switch" role="group" aria-label="Basemap"><button aria-pressed={basemap==='regional'} onClick={()=>setBasemap('regional')}>Local imagery</button><button aria-pressed={basemap==='satellite'} onClick={()=>setBasemap('satellite')}>Satellite</button><button aria-pressed={basemap==='terrain'} onClick={()=>setBasemap('terrain')}>Topo</button></div><button aria-pressed={overview} onClick={()=>setOverview(v=>!v)}>{overview?'Local sector':'All posts'}</button><button onClick={()=>{setOverview(false);setFocus(v=>v+1);}}>Focus</button><button aria-pressed={eoOpen} onClick={()=>setEOOpen(v=>!v)}>EO camera</button><span>INSTRUCTOR VIEW</span></div>
-        <DashboardMap snapshot={snapshot} layers={layers} selected={selected} basemap={basemap} focus={focus} overview={overview} onSelect={select}/>
-        {eoOpen&&snapshot.assetsReady&&<Suspense fallback={<div className="eo-loading">Preparing EO camera…</div>}><EOPanel onClose={()=>setEOOpen(false)}/></Suspense>}
+        <div className="map-toolbar"><button className="objects-toggle" onClick={()=>setObjectsOpen(v=>!v)} aria-expanded={objectsOpen}>Objects</button><div role="group" aria-label="Workspace view"><button aria-pressed={workspaceView==='sensors'} onClick={()=>setWorkspaceView('sensors')}>Sensor wall</button><button aria-pressed={workspaceView==='map'} onClick={()=>setWorkspaceView('map')}>Tactical map</button></div>{workspaceView==='map'&&<><div className="basemap-switch" role="group" aria-label="Basemap"><button aria-pressed={basemap==='regional'} onClick={()=>setBasemap('regional')}>Local imagery</button><button aria-pressed={basemap==='satellite'} onClick={()=>setBasemap('satellite')}>Satellite</button><button aria-pressed={basemap==='terrain'} onClick={()=>setBasemap('terrain')}>Topo</button></div><button aria-pressed={overview} onClick={()=>setOverview(v=>!v)}>{overview?'Local sector':'All posts'}</button><button onClick={()=>{setOverview(false);setFocus(v=>v+1);}}>Focus</button><button aria-pressed={eoOpen} onClick={()=>setEOOpen(v=>!v)}>EO / thermal</button></>}<span>INSTRUCTOR VIEW</span></div>
+        {workspaceView==='map'?<DashboardMap snapshot={snapshot} layers={layers} selected={selected} basemap={basemap} focus={focus} overview={overview} onSelect={select}/>:<Suspense fallback={<div className="eo-loading" role="status">Preparing sensor wall…</div>}><SensorWall snapshot={snapshot} exercise={adapter.getExerciseState()}/></Suspense>}
+        {workspaceView==='map'&&eoOpen&&snapshot.assetsReady&&<Suspense fallback={<div className="eo-loading">Preparing EO camera…</div>}><EOPanel onClose={()=>setEOOpen(false)}/></Suspense>}
       </div>
       {dockOpen&&<aside className="support-dock" id="support-dock" aria-label="Contact details and support assistant">
         <section className="object-details" aria-label="Selected object details"><div className="panel-heading"><span className="dash-kicker">SELECTION / DETAILS</span><span>{measured?'RADAR REPORT':track?'INSTRUCTOR TRUTH':'SESSION DATA'}</span></div>

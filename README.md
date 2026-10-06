@@ -1,58 +1,54 @@
-# Border observation trainer · Phase 1
+# Project Interceptor
 
-A standalone React / TypeScript / Vite application using Babylon.js and WebGL2, with locally hosted assets and a static deployable build.
+Three regional border training environments are implemented in this project. The latest instruction narrowed delivery to finishing these environments and stopping; extended dashboard/sensor verification has been deferred.
 
-**Current delivery: user-authorized Sketchfab drones and three selectable maps.** The user's subsequent instruction authorized the downloaded Sketchfab assets, replacing the original-only constraint for this implementation. The original Unreal extraction remains documented in [EXTRACTION.md](EXTRACTION.md); these models are not claimed simulator-original exports.
-
-## Run
+## Run locally
 
 ```powershell
-npm ci
+npm install
 npm run dev
 ```
 
-Open `http://127.0.0.1:5173` and click **Enter observation post**. WASD moves, Shift walks faster, mouse looks, Z/right-click toggles 5× optics, E records an observation, R restores your viewpoint, and P/Esc pauses. Losing focus, changing tabs or releasing mouse capture pauses; click Resume to continue.
+Open /trainer for ground observation, or /dashboard to select a post. A production static server is currently available at http://127.0.0.1:4181/trainer.
 
-**Change map & flight exercise** or the settings button exposes map, exercise, lighting, visibility, quality and quiet-period controls. Changing map or exercise starts a new session, carrying the chosen conditions, quality and delay. Reset before changing the quiet period.
+## Training posts
 
-## Maps and flights
+| Post | Region | Latitude / longitude | World |
+|---|---|---|---|
+| Shakti · POST 01 | Attari / Amritsar, Punjab | 31.60 N / 74.60 E | Agricultural plains |
+| Maru · POST 02 | Tanot / Jaisalmer, Rajasthan | 27.80 N / 70.40 E | Arid desert |
+| Himadri · POST 03 | Nathu La region, Sikkim | 27.40 N / 88.80 E | Mountain terrain |
 
-- **Rural border post:** open fields, wooded hills and roadside facilities.
-- **Mountain pass:** snowy Sketchfab mountain ridges, rising foothills, scanned boulders and fewer trees.
-- **Rocky valley:** dry Sketchfab terrain, warm ground materials, sparse vegetation and scanned boulders.
+Each world covers 6 x 6 km using locally packaged Copernicus GLO-30 elevation and frozen Sentinel-2 imagery. These are fictional training compounds at rounded regional anchors. Terrain includes a documented graded platform; source elevation is a 30 m surface model, not a surveyed military installation.
 
-The central observation post remains level. Each map has its own surrounding height field, exploration bounds, vegetation density and asset placements. Height sampling matches the triangles used to render the ground. Imported mountain/terrain tiles form distant scenery outside the walking area; nearby boulder fields have conservative collision bounds. Buildings, pillars, barriers, fences, tree trunks and rocks participate in ground collision. The gate is open. North is +Z, east +X, up +Y.
+The posts use imported security booths, chain-link fencing, road barriers, vegetation, real HDR lighting and ground normal detail. Collision heights match imported terrain triangles. Texture transparency has been restored using original source opacity maps. Assets and licences are local; only optional online overview basemaps need internet.
 
-The default **Rotating patrol** makes four successive passes: Orlan-10, Lancet, FPV and Geranium-2. The quiet period defaults to 25 seconds; spawn offsets after it are 0, 60, 120 and 180 seconds. Only one object is active at a time. Routes A–D select individual FPV, Orlan, Lancet and Geranium flights. Exercise names and the trainee HUD do not identify the active object or assign hostility labels. Settings list credits for all assets independently of the active object.
+## Observer controls
 
-Drone hierarchies are centered and scaled into metres while retaining proportions and embedded textures. Authored widths are 0.48 m, 3.1 m, 1.03 m and 2.5 m respectively. These are training dimensions, not certified manufacturer measurements. No source animations are supplied; the whole aircraft follows its route without propeller animation.
+WASD moves, mouse looks, Shift walks briskly, Z zooms, E/Space marks a contact, C opens contact reports and Esc/P pauses. Losing pointer lock, hiding the tab or changing views pauses the shared session. Resume explicitly.
 
-## Production and verification
+Settings select the post, exercise, day/night, visibility and rendering quality. Default: Shakti, low-altitude ingress, 25-second quiet period, daytime, clear visibility. Existing FPV, Orlan, Lancet and Geranium models remain available for four fictional exercise families and familiarisation. They are imported Sketchfab representations; the original cooked Unreal model export remains a separate blocked pipeline.
+
+The shared session and simulated radar/EO foundation were added during implementation. Their extended desktop QA is unfinished following the scope change. Recorded replay, persistent history, cloud/voice assistance, interceptor physics and XR remain future work.
+
+## Build and checks
 
 ```powershell
 npm test
 npm run build
+node tools/verify-regions.mjs
 node tools/serve-static.mjs
 ```
 
-The production URL is `http://127.0.0.1:4173`. Deploy `dist/` to a standard static host, including a subdirectory. No rendering server, CDN, runtime Sketchfab login or external asset request is needed. Raw source files and extraction tools are excluded from the build. The 18 simulation tests cover lifecycle, resets, observations, zones, hidden-tab pause, collisions, all four patrol aircraft on all maps, non-overlap and route clearance above terrain. See [VERIFICATION.md](VERIFICATION.md) for browser results and limitations.
+Deploy dist/ to a static host with /trainer and /dashboard rewritten to index.html. The included server supports TRAINER_PORT and TRAINER_BASE_PATH. Packaged 3D worlds require no rendering server or runtime Sketchfab login.
 
-`npm run qa` runs the original automated desktop Chrome/Edge regression checks when the static server is running. The opt-in `?qa=1` URL adds development-only stepping, model inspection, movement probes, a DOM diagnostic output and a diagnostic API. Ordinary trainee sessions omit those controls and truth data.
+Verified: 75 tests, production build, all three worlds in Chrome at 1280 x 720, imported terrain/collision alignment and local asset loading. The broader Chrome/Edge performance suite is available through npm run qa but is not claimed complete.
 
-## Architecture and sources
+## Assets and evidence
 
-- `src/simulation/types.ts`: maps, scenario configuration, asset provenance, entities/events and trainee-facing state.
-- `src/simulation/config.ts`: map library, sourced scenery placements and repeatable authored exercises.
-- `src/simulation/world.ts`: terrain triangle heights, swept movement, bounds and collision helpers.
-- `src/simulation/Simulation.ts`: renderer-independent 60 Hz fixed steps and interpolation; pause/reset/session and zone events.
-- `src/rendering/environment.ts`: sourced scenery, reusable post modules, shared materials, lighting, batching and tree LOD.
-- `src/rendering/Trainer.ts`: model template cache, instance disposal, source metadata validation, local asset loading and observer controls.
-- `src/ui/`: restrained field interface using self-hosted Barlow and IBM Plex Mono. A map change disposes the previous renderer and its asset containers before opening the next.
+[Regional sources and import instructions](docs/REGIONAL_ASSETS.md), [asset manifest](docs/ASSET_MANIFEST.md), [verification record](VERIFICATION.md).
 
-Simulation events have unique IDs, times, types, optional entity IDs and payloads. The session-local log is bounded at 10,000 events. Resets preserve conditions and delay and clear entities/visuals. Quality settings change resolution, shadows and tree detail while retaining world objects and scenario conditions.
+Raw crops, source models, hashes and licences are retained under assets-source/. Optimized worlds are public/assets/regions/; compound modules are public/assets/environment/. Geranium retains its noncommercial/ShareAlike licence. No cookies or API credentials are stored.
 
-Raw Sketchfab GLBs and provenance are in `assets-source/sketchfab/{uid}/`. `tools/prepare-sketchfab.mjs` produces local drone/scenery GLBs, adjacent provenance/license files, the drone catalog, and runtime credits. It preserves drone geometry and simplifies landscape geometry with glTF Transform/Meshoptimizer. `npm run assets:prepare` regenerates the Poly Haven environment assets. Runtime loading accepts only available catalog entries with complete source/license metadata, positive dimensions and valid geometry. Sketchfab models are explicitly marked `simulatorOriginal: false`.
+Screenshots and browser diagnostics: artifacts/qa/phase3/. Scene selection does not place these geographically distant posts beside one another; one regional exercise is active at a time.
 
-See [ASSETS.md](ASSETS.md) for sources and licenses. **Geranium-2 uses CC BY-NC-SA 4.0:** its source and modified browser model are for noncommercial use and retain ShareAlike terms. The other enabled Sketchfab models use CC BY 4.0. Credits and license links are also available in settings. No browser cookies or API tokens are stored in the project.
-
-Phase 1 does not include scoring, AAR UI, tactical console, interceptors or XR. Exact original Unreal UI parity has not been verified.

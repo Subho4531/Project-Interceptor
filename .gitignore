@@ -10,6 +10,7 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+.cache/
 
 # Local editor, system and package-manager files.
 npm-debug.log*

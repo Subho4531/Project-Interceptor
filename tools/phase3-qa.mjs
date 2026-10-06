@@ -1,0 +1,113 @@
+import { chromium } from 'playwright';
+import { mkdir, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
+const base=process.env.TRAINER_QA_URL??'http://127.0.0.1:4181';
+const directory=new URL('../artifacts/qa/phase3/',import.meta.url);
+await mkdir(directory,{recursive:true});
+const filepath=name=>fileURLToPath(new URL(name,directory));
+const report={date:new Date().toISOString(),base,hardware:{cpu:os.cpus()[0]?.model,cores:os.cpus().length,memoryGB:Math.round(os.totalmem()/2**30)},tests:[]};
+const channels=process.env.TRAINER_QA_CHANNELS?.split(',')??['chrome','msedge'];
+for(const channel of channels) {
+  const browser=await chromium.launch({channel,headless:true});
+  for(const [width,height] of [[1280,720],[1920,1080]]) {
+    const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
+    const errors=[],failed=[];
+    page.on('pageerror',error=>errors.push(String(error)));
+    page.on('response',response=>{if(response.status()>=400&&response.url().startsWith(base))failed.push(response.status()+' '+response.url());});
+    await page.goto(base+'/dashboard?qa=1');
+    await page.waitForFunction(()=>window.__sessionQA?.snapshot().assetsReady,undefined,{timeout:60000});
+    await page.waitForTimeout(700);
+    const snap=()=>page.evaluate(()=>window.__sessionQA.snapshot());
+    const command=value=>page.evaluate(value=>window.__sessionQA.command(value),value);
+    assert.equal((await snap()).mode,'live');
+    assert.equal(await page.getByText('PREVIEW MODE',{exact:true}).count(),0);
+    await page.getByRole('button',{name:'Exercise setup',exact:true}).click();
+    await page.getByLabel('Quiet period seconds').fill('0');
+    await page.getByLabel('Dashboard exercise').selectOption('swarm');
+    await page.getByLabel('Swarm contact count').fill('12');
+    await page.getByLabel('Swarm pair delay').fill('0');
+    assert.equal((await snap()).tracks.length,12);
+    await page.getByRole('button',{name:'Exercise setup',exact:true}).click();
+    await page.getByRole('button',{name:'Start exercise',exact:false}).click();
+    await page.waitForTimeout(2200);
+    assert.equal((await snap()).tracks.filter(t=>t.state==='active').length,12);
+    await command({type:'pause'});
+    const held=await snap();
+    await page.waitForTimeout(250);
+    assert.equal((await snap()).time,held.time);
+    const downloadPromise=page.waitForEvent('download');
+    await page.getByRole('button',{name:'Export session JSON',exact:false}).click();
+    const download=await downloadPromise;await download.saveAs(filepath(channel+'-'+width+'-session.json'));
+    await page.screenshot({path:filepath(channel+'-'+width+'-dashboard.png')});
+    await page.getByRole('button',{name:'EO camera',exact:true}).click();
+    await page.getByLabel('Simulated EO station').getByText('PAUSED',{exact:false}).waitFor({timeout:60000});
+    await page.getByLabel('EO bearing').fill('35');
+    await page.getByRole('button',{name:'Zoom to 8',exact:false}).click();
+    assert.equal((await snap()).eo.zoom,true);
+    assert.equal((await snap()).time,held.time);
+    await page.screenshot({path:filepath(channel+'-'+width+'-eo.png')});
+    await page.getByRole('button',{name:'Close EO live view'}).click();
+    const regions=[];
+    for(const postId of ['shakti-punjab','maru-rajasthan','himadri-sikkim']) {
+      await command({type:'post',postId,discardConfirmed:true});
+      await page.waitForFunction(post=>window.__sessionQA?.snapshot().postId===post&&window.__sessionQA.snapshot().assetsReady,postId,{timeout:60000});
+      await command({type:'scenario',scenarioId:'low-ingress',discardConfirmed:true});
+      await page.getByRole('link',{name:'Ground trainer',exact:false}).click();
+      await page.waitForFunction(()=>window.__trainerQA?.snapshot().ready,undefined,{timeout:60000});
+      const diagnostics=await page.evaluate(()=>window.__trainerQA.snapshot());
+      assert.equal(diagnostics.sessionId,(await snap()).sessionId);
+      assert.equal(diagnostics.postId,postId);
+      assert.ok(diagnostics.terrainProbes.every(p=>p.rendered!==undefined&&Math.abs(p.error)<.02),'Rendered terrain matches collision heights');
+      const before=diagnostics.camera;
+      await page.getByRole('button',{name:'Enter observation post',exact:false}).click();
+      await page.waitForTimeout(350);
+      assert.equal((await snap()).status,'running');
+      await page.keyboard.down('KeyW');await page.waitForTimeout(500);await page.keyboard.up('KeyW');
+      let ds=await page.evaluate(()=>window.__trainerQA.snapshot());
+      assert.ok(Math.hypot(ds.camera.x-before.x,ds.camera.z-before.z)>.3);
+      assert.ok(Math.abs(ds.camera.y-ds.terrainHeight-1.72)<.02);
+      await page.keyboard.press('KeyZ');
+      await page.waitForTimeout(1100);
+      const fps=[];
+      for(let i=0;i<5;i++){await page.waitForTimeout(300);fps.push((await page.evaluate(()=>window.__trainerQA.snapshot())).fps);}
+      await page.keyboard.press('Escape');await page.waitForTimeout(200);
+      assert.equal((await snap()).status,'paused');
+      await command({type:'step',seconds:5});
+      await page.waitForTimeout(200);
+      ds=await page.evaluate(()=>window.__trainerQA.snapshot());
+      assert.equal(ds.visualCount,1);
+      assert.equal(ds.entityCount,1);
+      await page.screenshot({path:filepath(channel+'-'+width+'-'+postId+'.png')});
+      const baseline={meshes:ds.meshes,materials:ds.materials,textures:ds.textures};
+      if(postId==='shakti-punjab') {
+        for(let i=0;i<25;i++){await command({type:'reset',discardConfirmed:true});await command({type:'step',seconds:5});await page.waitForTimeout(40);}
+        await page.waitForTimeout(200);
+        ds=await page.evaluate(()=>window.__trainerQA.snapshot());
+        assert.deepEqual({meshes:ds.meshes,materials:ds.materials,textures:ds.textures},baseline);
+        await command({type:'reset',discardConfirmed:true});
+        await page.evaluate(()=>window.__trainerQA.move(150,0));
+        assert.ok((await page.evaluate(()=>window.__trainerQA.snapshot())).camera.x<39.7,'Principal fence collision');
+        await command({type:'conditions',conditions:{timeOfDay:'night',visibility:'reduced'}});
+        await page.waitForTimeout(250);
+        await page.screenshot({path:filepath(channel+'-'+width+'-night.png')});
+        await command({type:'conditions',conditions:{timeOfDay:'day',visibility:'clear'}});
+      }
+      const retained=await snap();
+      await page.getByRole('link',{name:'Command dashboard',exact:false}).click();
+      await page.waitForFunction(()=>document.querySelector('.dashboard'));
+      assert.equal((await snap()).sessionId,retained.sessionId);
+      assert.equal((await snap()).time,retained.time);
+      regions.push({postId,renderer:ds.renderer,terrainProbes:ds.terrainProbes,fps,averageFPS:fps.reduce((a,b)=>a+b,0)/fps.length,baseline});
+    }
+    assert.deepEqual(errors,[],'No JS errors');assert.deepEqual(failed,[],'No local asset failures');
+    report.tests.push({channel,browser:browser.version(),width,height,regions,errors,failed});
+    await writeFile(filepath('report.json'),JSON.stringify(report,null,2));
+    console.log(channel+' '+width+'x'+height+' PASS; '+regions.map(r=>r.postId+': '+r.averageFPS.toFixed(1)+' FPS').join(', '));
+    await page.close();
+  }
+  await browser.close();
+}
+console.log('Phase 3 browser checks complete');
+

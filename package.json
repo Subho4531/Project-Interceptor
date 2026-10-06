@@ -8,21 +8,27 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
-    "qa": "node tools/browser-qa.mjs",
+    "qa": "node tools/phase3-qa.mjs",
     "inspect:package": "node tools/inspect-package.mjs",
-    "assets:prepare": "node tools/prepare-assets.mjs"
+    "assets:prepare": "node tools/prepare-assets.mjs",
+    "assets:regions": ".cache/regions-venv/Scripts/python.exe tools/prepare-regions.py",
+    "assets:compound": "node tools/prepare-compound.mjs",
+    "assets:verify-regions": "node tools/verify-regions.mjs"
   },
   "dependencies": {
     "@babylonjs/core": "^8.0.0",
     "@babylonjs/loaders": "^8.0.0",
     "@fontsource/barlow": "^5.2.0",
     "@fontsource/ibm-plex-mono": "^5.2.0",
+    "maplibre-gl": "^6.12.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@gltf-transform/core": "^4.2.0",
+    "@gltf-transform/extensions": "^4.2.0",
     "@gltf-transform/functions": "^4.2.0",
+    "@types/node": "^26.6.4",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.4.0",
@@ -30,7 +36,6 @@
     "playwright": "^1.51.0",
     "typescript": "~5.8.0",
     "vite": "^6.3.0",
-    "vitest": "^3.1.0",
-    "@gltf-transform/extensions": "^4.2.0"
+    "vitest": "^4.1.11"
   }
 }

@@ -1,4 +1,5 @@
 import type { Vec3, Bounds, Obstacle, EnvironmentConfig } from './types';
+import { getTerrainSurface } from './TerrainSurface';
 type Terrain = EnvironmentConfig['terrain'];
 const defaultTerrain: Terrain = { size: 2400, subdivisions: 240, profile: 'rural', tint: '#b8b59a' };
 export function rawTerrainHeight(x: number, z: number, terrain: Terrain = defaultTerrain): number {
@@ -11,6 +12,8 @@ export function rawTerrainHeight(x: number, z: number, terrain: Terrain = defaul
 }
 // Same triangles as Babylon's ground mesh, so eye height follows the rendered surface.
 export function terrainHeight(x: number, z: number, terrain: Terrain = defaultTerrain): number {
+  const imported = getTerrainSurface(terrain);
+  if (imported) return imported.heightAt(x,z);
   const step = terrain.size / terrain.subdivisions, half = terrain.size / 2;
   const gx = (x + half) / step, gz = (z + half) / step;
   const ix = Math.floor(gx), iz = Math.floor(gz), u = gx - ix, v = gz - iz;
@@ -34,9 +37,10 @@ export function moveObserver(p: Vec3, dx: number, dz: number, obstacles: Obstacl
   let { x, z } = p;
   for (let i = 0; i < steps; i++) {
     const nx = Math.max(bounds.minX + 0.4, Math.min(bounds.maxX - 0.4, x + dx / steps));
-    if (!collides(nx, z, obstacles)) x = nx;
+    const climbable=(tx:number,tz:number)=>Math.abs(terrainHeight(tx,tz,terrain)-terrainHeight(x,z,terrain))<=Math.hypot(tx-x,tz-z)*1.1+.03;
+    if (!collides(nx, z, obstacles) && climbable(nx,z)) x = nx;
     const nz = Math.max(bounds.minZ + 0.4, Math.min(bounds.maxZ - 0.4, z + dz / steps));
-    if (!collides(x, nz, obstacles)) z = nz;
+    if (!collides(x, nz, obstacles) && climbable(x,nz)) z = nz;
   }
   return { x, y: terrainHeight(x, z, terrain) + 1.72, z };
 }

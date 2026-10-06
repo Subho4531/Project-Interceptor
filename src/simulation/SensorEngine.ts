@@ -1,0 +1,92 @@
+import type { Conditions, EntityState, EnvironmentConfig, Vec3 } from './types';
+import { terrainHeight } from './world';
+
+export interface SensorConfig { id: 'radar' | 'eo'; position: Vec3; range: number; updateInterval: number; bearing: number; elevation: number; fieldOfView: number; errorMeters: number; }
+export interface SensorObservation { id: string; sensorId: 'radar' | 'eo'; entityId: string; position: Vec3; time: number; bearing: number; elevation: number; }
+export interface SensorTrack extends SensorObservation { label: string; state: 'acquiring' | 'firm' | 'coasting' | 'lost'; quality: number; age: number; detections: number; missed: number; }
+export interface SensorEvent { time: number; type: string; trackId: string; message: string; }
+const DEG=Math.PI/180;
+export const angularDifference=(a:number,b:number)=>Math.abs(((a-b+540)%360)-180);
+/** Shared optical limit matching Babylon EXP2 fog at 5% transmittance. */
+export function getOpticalRange(environment:EnvironmentConfig,conditions:Conditions,maximumRange=1100):number {
+  const density=environment.visibility[conditions.visibility];
+  const fogLimit=density>0?Math.sqrt(-Math.log(.05))/density:Infinity;
+  return Math.min(maximumRange*(conditions.visibility==='reduced'?.45:1),fogLimit)*(conditions.timeOfDay==='night'?.35:1);
+}
+export function inOpticalFrustum(offset:Vec3,bearing:number,elevation:number,horizontalFov:number):boolean {
+  const yaw=bearing*DEG,pitch=elevation*DEG;
+  const forward=offset.x*Math.sin(yaw)*Math.cos(pitch)+offset.y*Math.sin(pitch)+offset.z*Math.cos(yaw)*Math.cos(pitch);
+  if(forward<=0)return false;
+  const right=offset.x*Math.cos(yaw)-offset.z*Math.sin(yaw);
+  const up=-offset.x*Math.sin(yaw)*Math.sin(pitch)+offset.y*Math.cos(pitch)-offset.z*Math.cos(yaw)*Math.sin(pitch);
+  const tangent=Math.tan(horizontalFov*DEG/2);
+  return Math.abs(right)<=forward*tangent && Math.abs(up)<=forward*tangent*9/16;
+}
+export function lineOfSight(a: Vec3,b: Vec3,environment: EnvironmentConfig): boolean {
+  const steps=Math.max(2,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z)/4));
+  for(let i=1;i<steps;i++) {
+    const t=i/steps,x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t,z=a.z+(b.z-a.z)*t;
+    if(terrainHeight(x,z,environment.terrain)+.15>=y) return false;
+    for(const p of environment.placements) if(x>=p.position.x-p.size.x/2 && x<=p.position.x+p.size.x/2 && z>=p.position.z-p.size.z/2 && z<=p.position.z+p.size.z/2) {
+      const base=terrainHeight(p.position.x,p.position.z,environment.terrain)+p.position.y;
+      if(y>=base && y<=base+p.size.y)return false;
+    }
+  }
+  return true;
+}
+function noise(seed:number,second:number,id:string,axis:number) {
+  let value=(seed ^ Math.imul(second,1597334677) ^ axis)|0;
+  for(const char of id)value=Math.imul(value^char.charCodeAt(0),16777619);
+  value^=value<<13;value^=value>>>17;value^=value<<5;
+  return ((value>>>0)/4294967295*2-1)*25;
+}
+export class SensorEngine {
+  readonly radar: SensorConfig;
+  readonly eo: SensorConfig;
+  readonly tracks=new Map<string,SensorTrack>();
+  observations: SensorObservation[]=[];
+  events: SensorEvent[]=[];
+  private nextUpdate=1;
+  private previousEO=new Set<string>();
+  constructor(public readonly environment: EnvironmentConfig,private seed:number) {
+    const ground=terrainHeight(0,0,environment.terrain);
+    this.radar={id:'radar',position:{x:0,y:ground+12,z:0},range:2200,updateInterval:1,bearing:0,elevation:0,fieldOfView:360,errorMeters:25};
+    this.eo={id:'eo',position:{x:0,y:ground+5,z:0},range:1100,updateInterval:1,bearing:0,elevation:10,fieldOfView:40,errorMeters:0};
+  }
+  setEO(bearing:number,elevation:number,zoom:boolean) { this.eo.bearing=((bearing%360)+360)%360;this.eo.elevation=elevation;this.eo.fieldOfView=zoom?8:40; }
+  reset() {this.tracks.clear();this.observations=[];this.events=[];this.nextUpdate=1;this.previousEO.clear();}
+  update(time:number,entities:Iterable<EntityState>,conditions:Conditions) {
+    if(time+1e-9<this.nextUpdate) return;
+    const second=Math.floor(time+1e-9);this.nextUpdate=second+1;
+    const active=[...entities],seen=new Set<string>();this.observations=[];
+    for(const entity of active) {
+      const p=entity.position,radarDistance=Math.hypot(p.x-this.radar.position.x,p.y-this.radar.position.y,p.z-this.radar.position.z);
+      if(radarDistance<=this.radar.range && lineOfSight(this.radar.position,p,this.environment)) {
+        seen.add(entity.id);const id=`radar-${entity.id}`,old=this.tracks.get(id),detections=(old?.missed===0?old.detections:0)+1;
+        const position={...p,x:p.x+noise(this.seed,second,entity.id,1),z:p.z+noise(this.seed,second,entity.id,2)};
+        const bearing=((Math.atan2(position.x-this.radar.position.x,position.z-this.radar.position.z)/DEG)%360+360)%360;
+        const state=detections>=2?'firm':'acquiring';
+        const track:SensorTrack={id,sensorId:'radar',entityId:entity.id,label:`Track ${entity.id.split('-').at(-1)}`,position,time,bearing,elevation:Math.atan2(position.y-this.radar.position.y,Math.hypot(position.x,position.z))/DEG,state,quality:Math.min(1,detections/5),age:0,detections,missed:0};
+        this.tracks.set(id,track);
+        if(old?.state!==state)this.record(time,`radar-${state}`,id,`${track.label}: ${state}.`);
+      }
+      const dx=p.x-this.eo.position.x,dz=p.z-this.eo.position.z,dy=p.y-this.eo.position.y,distance=Math.hypot(dx,dy,dz),bearing=((Math.atan2(dx,dz)/DEG)%360+360)%360,elevation=Math.atan2(dy,Math.hypot(dx,dz))/DEG;
+      const range=getOpticalRange(this.environment,conditions,this.eo.range);
+      // 0.3 m is the conservative smallest training silhouette, not a capability claim.
+      if(distance<=range && inOpticalFrustum({x:dx,y:dy,z:dz},this.eo.bearing,this.eo.elevation,this.eo.fieldOfView) && 2*Math.atan(.15/Math.max(distance,.1))/DEG >= (this.eo.fieldOfView===8?.015:.04) && lineOfSight(this.eo.position,p,this.environment)) {
+        this.observations.push({id:`eo-${entity.id}`,sensorId:'eo',entityId:entity.id,position:{...p},time,bearing,elevation});
+      }
+    }
+    for(const track of this.tracks.values()) if(!seen.has(track.entityId)) {
+      const before=track.state;track.missed++;track.age=Math.max(0,time-track.time);track.quality=Math.max(0,track.quality-.1);
+      if(track.age>=10)track.state='lost';else if(track.missed>=3)track.state='coasting';
+      if(before!==track.state)this.record(time,`radar-${track.state}`,track.id,`${track.label}: ${track.state}; last report ${Math.round(track.age)} s ago.`);
+    }
+    const currentEO=new Set(this.observations.map(o=>o.id));
+    for(const observation of this.observations)if(!this.previousEO.has(observation.id))this.record(time,'eo-acquired',observation.id,'EO acquired an unclassified visual contact.');
+    for(const id of this.previousEO)if(!currentEO.has(id))this.record(time,'eo-lost',id,'EO visual contact lost: pointing, visibility or masking changed.');
+    this.previousEO=currentEO;
+    if(this.events.length>2000)this.events.splice(0,500);
+  }
+  private record(time:number,type:string,trackId:string,message:string) {this.events.push({time,type,trackId,message});}
+}

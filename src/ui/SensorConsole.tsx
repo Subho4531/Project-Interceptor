@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
 import type { ExerciseAction, ExerciseState } from '../training/Exercise';
 import type { PostId } from '../dashboard/types';
+import type { Conditions, TrainingScenarioId } from '../simulation/types';
+import type { EnvironmentSetting } from '../simulation/EnvironmentVariants';
+import type { SensorHealthSummary } from '../simulation/SensorEngine';
 import { postById } from '../dashboard/posts';
 import { assetUrl } from '../routing';
 import './sensor-console.css';
@@ -8,6 +11,13 @@ import './sensor-console.css';
 type Props = {
   snapshot: ExerciseState;
   postId: PostId;
+  scenarioId: TrainingScenarioId;
+  trainingMode: 'guided' | 'practice' | 'assessment' | 'demo';
+  level: number;
+  environmentSetting: EnvironmentSetting;
+  weather: NonNullable<Conditions['weather']>;
+  sensorHealth?: SensorHealthSummary;
+  eligibilityFlags: string[];
   sessionStatus: 'ready' | 'running' | 'paused' | 'completed';
   assetsReady: boolean;
   error?: string;
@@ -19,8 +29,11 @@ type Props = {
   onExport: () => void;
   onOpenSavedReview: () => void;
   onRetryAssets: () => void;
+  onScenarioChange: (scenario: TrainingScenarioId) => void;
   onOpenObserver: () => void;
   onOpenDashboard: () => void;
+  onOpenProgress: () => void;
+  onOpenRoom: () => void;
 };
 const clock = (time: number) => `${Math.floor(time / 60).toString().padStart(2, '0')}:${Math.floor(time % 60).toString().padStart(2, '0')}`;
 const optionSets = {
@@ -36,12 +49,13 @@ const assessmentActions = {
   threat: 'set-threat',
 } as const;
 
-export default function SensorConsole({ snapshot, postId, sessionStatus, assetsReady, error, onAction, onStart, onPause, onResume, onReset, onExport, onOpenSavedReview, onRetryAssets, onOpenObserver, onOpenDashboard }: Props) {
+export default function SensorConsole({ snapshot, postId, scenarioId, trainingMode, level, environmentSetting, weather, sensorHealth, eligibilityFlags, sessionStatus, assetsReady, error, onAction, onStart, onPause, onResume, onReset, onExport, onOpenSavedReview, onRetryAssets, onScenarioChange, onOpenObserver, onOpenDashboard, onOpenProgress, onOpenRoom }: Props) {
   const [selectedId, setSelectedId] = useState<string>();
   const post = postById(postId);
+  const briefingCode = scenarioId === 'ambiguous' ? 'TR 02 / UNCERTAIN ACTIVITY' : scenarioId === 'friendly' ? 'TR 03 / AUTHORIZATION REVIEW' : scenarioId === 'coordinated' ? 'TR 04 / COORDINATED CONTACTS' : scenarioId === 'mixed' ? 'TR 05 / PRIORITISE NEUTRAL TRACKS' : 'TR 01 / BASIC DETECTION';
   const selected = snapshot.tracks.find(track => track.id === selectedId) ?? snapshot.tracks.find(track => track.id === snapshot.selectedContactId) ?? snapshot.tracks[0];
   const assessment = selected ? snapshot.assessments[selected.id] ?? {} : {};
-  const evidence = selected?.id === snapshot.selectedContactId ? snapshot.selectedEvidence : [];
+  const evidence = selected ? snapshot.evidenceByContact[selected.id] ?? [] : [];
   const radarPoints = useMemo(() => snapshot.tracks.map(track => {
     const distance = Math.min(1, track.rangeMeters / 2200) * 43;
     const angle = track.bearing * Math.PI / 180;
@@ -56,17 +70,29 @@ export default function SensorConsole({ snapshot, postId, sessionStatus, assetsR
     <header className="sensor-topbar">
       <div className="sensor-brand"><span className="sensor-brand-mark">⌖</span><span><strong>PROJECT INTERCEPTOR</strong><small>TRAINEE / SENSOR CONSOLE</small></span></div>
       <div className="sensor-session"><span>{post.name.toUpperCase()} · {post.region.toUpperCase()}</span><b>{sessionStatus.toUpperCase()}</b><time>{clock(snapshot.time)}</time></div>
-      <nav aria-label="Session views"><button onClick={onOpenObserver}>Ground observer ↗</button><button onClick={onOpenDashboard}>Open dashboard ↗</button></nav>
+      <nav aria-label="Session views"><button onClick={onOpenProgress}>Curriculum ↗</button><button onClick={onOpenRoom}>Room / VR ↗</button><button onClick={onOpenObserver}>Ground observer ↗</button><button onClick={onOpenDashboard}>Open dashboard ↗</button></nav>
     </header>
+    <div className="sensor-health-strip" role="status" aria-label="Training environment and sensor status">
+      <span>SETTING <b>{environmentSetting === 'semi-urban' ? 'SEMI-URBAN' : 'RURAL'}</b></span>
+      <span>WEATHER <b>{weather.toUpperCase()}</b></span>
+      {sensorHealth&&<>
+        <span>{sensorHealth.difficulty.toUpperCase()} SENSOR MODEL</span>
+        <span>RADAR <b>{sensorHealth.radarLatencySeconds}s delay · ±{sensorHealth.radarNoiseMeters}m noise · {Math.round(sensorHealth.radarIntermittenceProbability*100)}% gaps</b></span>
+        <span>EO <b>{Math.round(sensorHealth.eoRangeScale*100)}% range · {Math.round(sensorHealth.eoOutageProbability*100)}% outage</b></span>
+      </>}
+    </div>
     {sessionStatus === 'ready' && <section className="sensor-briefing" aria-label="Exercise briefing">
-      <span className="sensor-kicker">LEVEL 01 / BASIC DETECTION</span><h1>Monitor the post. Assess what the sensors reveal.</h1>
-      <p>Unusual activity may appear after a quiet period. Acknowledge a sensor track, compare available evidence, then submit your assessment and high-level decision.</p>
-      <div className="sensor-brief-grid"><span>POST <b>{post.name} / {post.state}</b></span><span>MODE <b>Practice exercise</b></span><span>SENSORS <b>Radar · EO · RF · roster</b></span></div>
+      <span className="sensor-kicker">{briefingCode}</span><h1>Monitor the post. Assess what the sensors reveal.</h1>
+      <p>{scenarioId==='mixed'?'Multiple neutral tracks may appear. Compare their evidence, prioritise investigations and keep each assessment tied to its own contact.':'Unusual activity may appear after a quiet period. Acknowledge a sensor track, compare available evidence, then submit your assessment and high-level decision.'}</p>
+      <label className="sensor-brief-choice">EXERCISE<select aria-label="Training exercise" disabled={trainingMode==='assessment'} value={scenarioId} onChange={event=>onScenarioChange(event.target.value as TrainingScenarioId)}><option value="low-ingress">TR 01 · Basic detection</option><option value="ambiguous">TR 02 · Uncertain activity</option><option value="friendly">TR 03 · Authorization review</option><option value="coordinated">TR 04 · Coordinated contacts</option><option value="mixed">TR 05 · Track prioritisation</option></select></label>
+      <div className="sensor-brief-grid"><span>POST <b>{post.name} / {post.state}</b></span><span>MODE <b>Level {level} · {trainingMode}</b></span><span>SENSORS <b>Radar · EO · RF · roster</b></span></div>
+      {trainingMode==='assessment'&&<p className="sensor-muted">Assessment runs at 1×. Pausing, leaving the trainee view or opening instructor truth makes this attempt ineligible for progression.</p>}
       <p className="sensor-muted">Object identity and the expected answer remain hidden until review. The assessment clock continues while panels are open.</p>
       {error && <p role="alert" className="sensor-error">{error} <button onClick={onRetryAssets}>Retry assets</button></p>}
       <button className="sensor-primary" disabled={!assetsReady} onClick={onStart}>{assetsReady ? 'Start exercise →' : 'Validating local training assets…'}</button>
     </section>}
     {sessionStatus === 'paused' && <div className="sensor-paused" role="status"><b>Exercise paused</b><span>The simulation clock and pending evidence are held.</span><button onClick={onResume}>Resume exercise</button></div>}
+    {eligibilityFlags.length>0&&sessionStatus!=='ready'&&<div className="sensor-consequence" role="status"><strong>PROGRESSION INELIGIBLE</strong><span>{eligibilityFlags.join(' · ')}. The attempt remains available for review.</span></div>}
     {snapshot.consequences.length > 0 && sessionStatus !== 'completed' && <div className="sensor-consequence" role="status"><strong>SIMULATED OUTCOME</strong><span>{snapshot.consequences.at(-1)!.summary}</span></div>}
     {sessionStatus !== 'ready' && <div className="sensor-workspace">
       <section className="sensor-panel sensor-map" aria-label="Airspace overview"><div className="sensor-panel-heading"><span>01 / AIRSPACE OVERVIEW</span><span>LOCAL SECTOR · SIMULATED</span></div>
@@ -96,6 +122,7 @@ export default function SensorConsole({ snapshot, postId, sessionStatus, assetsR
         </>}
       </section>
       <section className="sensor-panel sensor-assistant" aria-label="Analysis assistant"><div className="sensor-panel-heading"><span>SAARTHI / ANALYSIS SUPPORT</span><span>LOCAL RULES</span></div>
+        {trainingMode==='guided'&&<div className="sensor-hypothesis"><b>Practice coach</b><p>{!selected?'Maintain watch for new returns.':!selected.acknowledged?'Acknowledge the neutral track to start an investigation record.':evidence.length<2?'Request another source and compare its capture time, delivery time and uncertainty.':'Compare supporting and conflicting evidence. Keep object type, affiliation and risk separate, then choose a proportionate action.'}</p></div>}
         {snapshot.hypotheses.length ? snapshot.hypotheses.filter(h => !selected || h.contactId === selected.id).map((h,index) => <div className="sensor-hypothesis" key={index}><b>{h.label}</b><span>{h.confidence.toUpperCase()} SUPPORT</span><p>{h.basis}</p></div>) : <p className="sensor-muted">No hypothesis is available. The assistant uses delivered sensor evidence and does not decide for you.</p>}
         <small>Support descriptions are training aids, not calibrated probabilities.</small>
       </section>
@@ -105,9 +132,9 @@ export default function SensorConsole({ snapshot, postId, sessionStatus, assetsR
     {snapshot.review && sessionStatus === 'completed' && <section className="sensor-review" aria-label="After action review">
       <span className="sensor-kicker">AFTER ACTION REVIEW</span><h2>Exercise complete</h2>
       <p>{snapshot.review.summary}</p>
-      <div className="sensor-score"><strong>{Math.round(snapshot.review.overall)}</strong><span>/ 100 · OVERALL</span></div>
+      {level===0?<div className="sensor-diagnostic-note"><strong>Familiarisation · diagnostic</strong><span>This review supports practice only. It has no progression score.</span></div>:<div className="sensor-score"><strong>{Math.round(snapshot.review.overall)}</strong><span>/ 100 · OVERALL</span></div>}
       <p className="sensor-review-latency">First cue to acknowledgement: {snapshot.review.detectionLatencySeconds === undefined ? 'No acknowledgement' : snapshot.review.detectionLatencySeconds.toFixed(1) + ' s'}{snapshot.review.criticalDecisionError ? ' · Critical decision error recorded' : ''}</p>
-      <div className="sensor-score-grid">{([['detection','Detection'],['classification','Classification'],['threatAssessment','Threat assessment'],['decisionQuality','Decision quality']] as const).map(([key,label])=><div key={key}><b>{Math.round(snapshot.review!.scores[key])}</b><span>{label}</span><p>{snapshot.review!.reasons[key]}</p></div>)}</div>
+      <div className="sensor-score-grid">{([['detection','Detection'],['classification','Classification'],['threatAssessment','Threat assessment'],['decisionQuality','Decision quality']] as const).map(([key,label])=><div key={key}><b>{Math.round(snapshot.review!.scores[key])}</b><span>{level===0?`Diagnostic · ${label}`:label}</span><p>{snapshot.review!.reasons[key]}</p></div>)}</div>
       <p className="sensor-review-truth">Scenario truth revealed after completion: {snapshot.review.groundTruth.objectType.toUpperCase()} · {snapshot.review.groundTruth.coordination.replaceAll('-', ' ')} · {snapshot.review.groundTruth.affiliation} · {snapshot.review.groundTruth.threat} threat.</p>
       <h3>Chronology</h3><ol>{snapshot.review.chronology.map(item=><li key={item.id}><time>{clock(item.time)}</time><span><b>{item.type.replaceAll('-', ' ')}</b><small>{item.detail}</small></span></li>)}</ol>
       <div className="sensor-review-actions"><button className="sensor-primary" onClick={onOpenSavedReview}>Open replay →</button><button onClick={onReset}>Repeat exercise</button><button onClick={onExport}>Export review JSON</button><button onClick={onOpenDashboard}>Instructor dashboard</button></div>

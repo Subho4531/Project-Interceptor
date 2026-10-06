@@ -4,33 +4,25 @@ import { appLink } from '../routing';
 import { postById } from '../dashboard/posts';
 import './sensor-console.css';
 
-const clock = (time: number) => `${Math.floor(time / 60).toString().padStart(2, '0')}:${Math.floor(time % 60).toString().padStart(2, '0')}`;
-export default function AARPage() {
-  const id = decodeURIComponent(location.pathname.match(/\/aar\/([^/]+)\/?$/)?.[1] ?? '');
-  const [archive, setArchive] = useState<ExerciseArchive>();
-  const [error, setError] = useState('');
-  const [time, setTime] = useState(0);
-  useEffect(() => {
-    if (!id) { setError('No session was selected.'); return; }
-    void getAttempt(id).then(result => {
-      if (!result?.state.review) { setError('This completed session is not available in local history.'); return; }
-      setArchive(result); setTime(result.state.time);
-    }).catch(reason => setError(String(reason)));
-  }, [id]);
-  const review = archive?.state.review;
-  const chronology = review?.chronology.filter(event => event.time <= time) ?? [];
-  const evidence = archive?.state.selectedEvidence.filter(item => item.deliveryTime <= time) ?? [];
-  const actions = archive?.state.actions.filter(item => item.time <= time) ?? [];
-  return <main className="sensor-console aar-page">
-    <header className="sensor-topbar"><div className="sensor-brand"><span className="sensor-brand-mark">⌖</span><span><strong>PROJECT INTERCEPTOR</strong><small>LOCAL AFTER ACTION REVIEW</small></span></div><nav><a href={appLink('trainer')}>Training console ↗</a><a href={appLink('dashboard')}>Instructor dashboard ↗</a></nav></header>
-    {error ? <section className="aar-content"><h1>Review unavailable</h1><p role="alert">{error}</p><a href={appLink('trainer')}>Return to training</a></section>
-      : !archive || !review ? <section className="aar-content" role="status">Loading local review…</section>
-        : <section className="aar-content"><span className="sensor-kicker">{postById(archive.postId).name.toUpperCase()} / PRACTICE / {archive.completedAt.slice(0, 10)}</span><h1>After action review</h1>
-          <div className="aar-summary"><strong>{Math.round(review.overall)}<small>/ 100</small></strong><p>Detection {Math.round(review.scores.detection)} · Classification {Math.round(review.scores.classification)} · Threat assessment {Math.round(review.scores.threatAssessment)} · Decision quality {Math.round(review.scores.decisionQuality)}</p></div>
-          <p>First cue to acknowledgement: {review.detectionLatencySeconds === undefined ? 'No acknowledgement' : review.detectionLatencySeconds.toFixed(1) + ' seconds'}. {review.criticalDecisionError ? 'A critical decision error was recorded.' : 'No critical decision error was recorded.'}</p>
-          <div className="aar-replay-control"><label htmlFor="replay-time">Replay trainee evidence at {clock(time)}</label><input id="replay-time" type="range" min="0" max={Math.max(1, Math.ceil(archive.state.time))} step="1" value={Math.min(time,Math.ceil(archive.state.time))} onChange={event => setTime(Number(event.target.value))}/><small>Replay shows only evidence and decisions recorded by this local exercise. It cannot change the completed result.</small></div>
-          <div className="aar-columns"><section><h2>Events through {clock(time)}</h2><ol>{chronology.map(event => <li key={event.id}><time>{clock(event.time)}</time><span>{event.detail}</span></li>)}</ol></section><section><h2>Evidence available</h2><ol>{evidence.map(item => <li key={item.id}><time>{clock(item.deliveryTime)}</time><span><b>{item.source.toUpperCase()}</b> · {item.summary}</span></li>)}</ol><h2>Recorded actions</h2><ol>{actions.map(action => <li key={action.id}><time>{clock(action.time)}</time><span>{action.summary}</span></li>)}</ol></section></div>
-          <div className="aar-truth"><h2>Scenario truth</h2><p>{review.groundTruth.objectType.toUpperCase()} · {review.groundTruth.coordination.replaceAll('-', ' ')} · {review.groundTruth.affiliation} · {review.groundTruth.threat} threat</p><small>Truth is available in completed reviews only. The replayed evidence lists what the trainee had received at the selected time.</small></div>
-        </section>}
+const clock=(time:number)=>`${Math.floor(time/60).toString().padStart(2,'0')}:${Math.floor(time%60).toString().padStart(2,'0')}`;
+export default function AARPage(){
+  const id=decodeURIComponent(location.pathname.match(/\/aar\/([^/]+)\/?$/)?.[1]??'');
+  const [archive,setArchive]=useState<ExerciseArchive>(),[error,setError]=useState(''),[time,setTime]=useState(0),[truth,setTruth]=useState(false);
+  useEffect(()=>{void getAttempt(id).then(record=>{if(!record){setError('This session is not available in local history.');return;}setArchive(record);setTime(record.state.time);}).catch(reason=>setError(String(reason)));},[id]);
+  const review=archive?.state.review;
+  const chronology=(archive?.state.chronology??review?.chronology??[]).filter(event=>event.time<=time);
+  const allEvidence=archive?.state.evidenceByContact?Object.entries(archive.state.evidenceByContact).flatMap(([contactId,items])=>items.map(item=>({...item,contactId}))):(archive?.state.selectedEvidence??[]).map(item=>({...item,contactId:'Contact'}));
+  const evidence=allEvidence.filter(item=>item.deliveryTime<=time).sort((a,b)=>a.deliveryTime-b.deliveryTime);
+  const actions=archive?.state.actions.filter(action=>action.time<=time)??[];
+  const checkpoint=archive?.checkpoints?.filter(item=>item.time<=time).at(-1);
+  return <main className="sensor-console aar-page"><header className="sensor-topbar"><div className="sensor-brand"><span className="sensor-brand-mark">⌖</span><span><strong>PROJECT INTERCEPTOR</strong><small>LOCAL AFTER ACTION REVIEW</small></span></div><nav><a href={appLink('progress')}>Curriculum & history ↗</a><a href={appLink('trainer')}>Training console ↗</a></nav></header>
+    {error?<section className="aar-content"><h1>Review unavailable</h1><p role="alert">{error}</p></section>:!archive?<section className="aar-content" role="status">Loading local review…</section>:<section className="aar-content"><span className="sensor-kicker">{postById(archive.postId).name.toUpperCase()} / {archive.mode.toUpperCase()} / LEVEL {archive.level??'LEGACY'}</span><h1>{review?'After action review':'Interrupted attempt'}</h1>
+      {review?<><div className="aar-summary"><strong>{archive.level===0?'FAM':Math.round(review.overall)}<small>{archive.level===0?'unscored':'/ 100'}</small></strong><p>Detection {Math.round(review.scores.detection)} · Classification {Math.round(review.scores.classification)} · Threat assessment {Math.round(review.scores.threatAssessment)} · Decision quality {Math.round(review.scores.decisionQuality)}</p></div><p>First cue to acknowledgement: {review.detectionLatencySeconds===undefined?'No acknowledgement':review.detectionLatencySeconds.toFixed(1)+' seconds'}. {review.criticalDecisionError?'Critical decision error recorded.':'No critical decision error.'}</p></>:<p>The recovered clock is held. This record is available for learning and cannot unlock a competency level.</p>}
+      <p>Input history: {(archive.inputModeTransitions??[{time:0,mode:archive.inputMode??'desktop'}]).map(item=>clock(item.time)+' '+item.mode.toUpperCase()).join(' → ')}. {archive.resolvedRecipe?'Resolved scenario configuration retained.':''}</p>
+      {archive.eligibilityFlags?.length?<p className="sensor-review-truth">Progression flags: {archive.eligibilityFlags.join(' · ')}</p>:null}
+      <div className="aar-replay-control"><label htmlFor="replay-time">Replay trainee evidence at {clock(time)}</label><input id="replay-time" aria-label={`Replay trainee evidence at ${clock(time)}`} type="range" min="0" max={Math.max(1,Math.ceil(archive.state.time))} step="1" value={Math.min(time,Math.ceil(archive.state.time))} onChange={event=>setTime(Number(event.target.value))}/><small>Read-only replay. Checkpoints preserve the trainee projection every five simulation seconds; events and evidence retain their original timestamps.</small><div><button aria-pressed={!truth} onClick={()=>setTruth(false)}>Trainee evidence</button><button disabled={!review} aria-pressed={truth} onClick={()=>setTruth(true)}>Instructor truth</button></div></div>
+      {truth&&review?<div className="aar-truth"><h2>Scenario truth</h2><p>{review.groundTruth.objectType.toUpperCase()} · {review.groundTruth.coordination.replaceAll('-',' ')} · {review.groundTruth.affiliation} · {review.groundTruth.threat} threat</p><ol>{review.groundTruth.contacts?.map(contact=><li key={contact.contactId}>{contact.contactId}: {contact.objectType} / {contact.coordination} / {contact.affiliation} / {contact.threat}</li>)}</ol><small>Completed scenario truth. Historical measured positions appear in the trainee checkpoint view.</small></div>:<div className="aar-columns"><section><h2>Events through {clock(time)}</h2><ol>{chronology.map(event=><li key={event.id}><time>{clock(event.time)}</time><span>{event.contactId??'SESSION'} · {event.detail}</span></li>)}</ol>{checkpoint&&<><h2>Observed checkpoint · {clock(checkpoint.time)}</h2><ol>{checkpoint.state.tracks.map(track=><li key={track.id}><span>{track.label} · {Math.round(track.bearing)}° / {Math.round(track.rangeMeters)} m / {track.state}</span></li>)}</ol></>}</section><section><h2>Evidence available</h2><ol>{evidence.map(item=><li key={item.id}><time>{clock(item.deliveryTime)}</time><span><b>{item.contactId} / {item.source.toUpperCase()}</b> · {item.summary}</span></li>)}</ol><h2>Recorded actions</h2><ol>{actions.map(action=><li key={action.id}><time>{clock(action.time)}</time><span>{action.contactId??'SESSION'} · {action.summary}</span></li>)}</ol></section></div>}
+      {review&&<div className="aar-truth"><h2>Score explanation</h2>{Object.entries(review.reasons).map(([component,reason])=><p key={component}><b>{component}</b>: {reason}</p>)}<small>Rubric {archive.rubricVersion??'legacy'} · seed {archive.seed}. Practice, demo, legacy and interrupted attempts do not award competency.</small></div>}
+    </section>}
   </main>;
 }

@@ -67,7 +67,7 @@ export default function App() {
     // A map owns its renderer and resource containers. Dispose it fully before opening another.
     // Conditions, exercise, quality and quiet period are carried into the new map.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [controller, mapId, rendererAttempt]);
+  }, [controller, mapId, session.environmentSetting, rendererAttempt]);
   useEffect(() => { trainer.current?.restoreObserver(); }, [session.sessionId]);
   function conditions(patch: Partial<Conditions>) { trainer.current?.setConditions({ ...state.conditions, ...patch }); }
   function resetExercise() { trainer.current?.reset(); setSettings(false); setContactPanel(false); }

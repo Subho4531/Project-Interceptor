@@ -1,13 +1,15 @@
 import { Scene } from '@babylonjs/core/scene';
 import { Vector3, Quaternion } from '@babylonjs/core/Maths/math.vector';
-import { Color3 } from '@babylonjs/core/Maths/math.color';
+import { Color3, Color4 } from '@babylonjs/core/Maths/math.color';
 import { DirectionalLight } from '@babylonjs/core/Lights/directionalLight';
 import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight';
 import { PointLight } from '@babylonjs/core/Lights/pointLight';
 import { ShadowGenerator } from '@babylonjs/core/Lights/Shadows/shadowGenerator';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
+import { ParticleSystem } from '@babylonjs/core/Particles/particleSystem';
 import { HDRCubeTexture } from '@babylonjs/core/Materials/Textures/hdrCubeTexture';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
+import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTexture';
 import { PBRMaterial } from '@babylonjs/core/Materials/PBR/pbrMaterial';
 import { LoadAssetContainerAsync } from '@babylonjs/core/Loading/sceneLoader';
 import type { AssetContainer } from '@babylonjs/core/assetContainer';
@@ -91,7 +93,12 @@ export async function buildEnvironment(scene: Scene, config: EnvironmentConfig, 
   report('Loading imported compound modules', .25);
   const [booth, fence, barrier] = await Promise.all(['booth','fence','barrier'].map(name => load(`./assets/environment/${name}.glb`)));
   if (signal.aborted) return null;
-  if (booth) for (const placement of config.placements) place(booth, placement.id, placement.position, placement.size, 0, true, true);
+  if (booth) for (const placement of config.placements) {
+    if (placement.module !== 'barrier') place(booth, placement.id, placement.position, placement.size, 0, true, true);
+  }
+  if (barrier) for (const placement of config.placements) {
+    if (placement.module === 'barrier') place(barrier, placement.id, placement.position, placement.size, 0, true, true);
+  }
   function fenceRun(ax: number, az: number, bx: number, bz: number, id: string) {
     if (!fence) return;
     const length = Math.hypot(bx-ax,bz-az), count = Math.ceil(length/4), segment = length/count;
@@ -134,9 +141,34 @@ export async function buildEnvironment(scene: Scene, config: EnvironmentConfig, 
   const sky = skyTexture ? scene.createDefaultSkybox(skyTexture,false,12000,0,false) : null;
   if (skyTexture) scene.environmentTexture=skyTexture;
   if (sky) sky.applyFog=false;
+  // Rain uses a tiny authored streak texture and a local particle volume around
+  // the observer. It is a weather effect, not substitute landscape geometry.
+  const rainEmitter = Vector3.Zero();
+  const rainTexture = new DynamicTexture('rain-streak-texture', { width: 8, height: 32 }, scene, false);
+  rainTexture.hasAlpha = true;
+  const rainContext = rainTexture.getContext();
+  const rainGradient = rainContext.createLinearGradient(0, 0, 0, 32);
+  rainGradient.addColorStop(0, 'rgba(255,255,255,0)');
+  rainGradient.addColorStop(.18, 'rgba(255,255,255,.72)');
+  rainGradient.addColorStop(.82, 'rgba(255,255,255,.72)');
+  rainGradient.addColorStop(1, 'rgba(255,255,255,0)');
+  rainContext.fillStyle = rainGradient;
+  rainContext.fillRect(3, 0, 2, 32);
+  rainTexture.update(false);
+  const rain = new ParticleSystem('rain-particles', 800, scene);
+  rain.particleTexture = rainTexture;
+  rain.emitter = rainEmitter;
+  rain.minEmitBox = new Vector3(-32, 5, -32); rain.maxEmitBox = new Vector3(32, 34, 32);
+  rain.direction1 = new Vector3(-2, -24, 1); rain.direction2 = new Vector3(-1, -28, 2);
+  rain.minEmitPower = 1; rain.maxEmitPower = 1; rain.minLifeTime = .45; rain.maxLifeTime = .8;
+  rain.minSize = .08; rain.maxSize = .14; rain.emitRate = 1000;
+  rain.color1 = new Color4(.72, .79, .88, .58); rain.color2 = new Color4(.62, .71, .82, .38); rain.colorDead = new Color4(.62, .71, .82, 0);
+  rain.gravity = new Vector3(0, -2, 0); rain.updateSpeed = .01;
+  scene.onDisposeObservable.add(() => { rain.dispose(); rainTexture.dispose(); });
   const casters=[...(shadow.getShadowMap()?.renderList ?? [])];
-  let quality: Quality='standard', conditions: Conditions={timeOfDay:'day',visibility:'clear'}, lodFrame=0;
+  let quality: Quality='standard', conditions: Conditions={timeOfDay:'day',visibility:'clear'}, lodFrame=0, rainEnabled=false;
   scene.onBeforeRenderObservable.add(()=>{
+    if (scene.activeCamera) { rainEmitter.copyFrom(scene.activeCamera.position); rainEmitter.y += 15; }
     if (++lodFrame%20 || !scene.activeCamera) return;
     for (const detail of details) {
       const high=Vector3.DistanceSquared(detail.position,scene.activeCamera.position)<(quality==='low'?75**2:160**2);
@@ -145,9 +177,15 @@ export async function buildEnvironment(scene: Scene, config: EnvironmentConfig, 
   });
   function setConditions(next: Conditions) {
     conditions={...next}; const night=next.timeOfDay==='night';
+    const weather=next.weather ?? 'clear';
     sun.intensity=night?config.lighting.nightIntensity:config.lighting.dayIntensity; sun.diffuse=night?color('#718ba9'):color('#fff1d5');
     ambient.intensity=night?.13:.8; scene.environmentIntensity=night?.025:.65;
-    scene.fogMode=Scene.FOGMODE_EXP2; scene.fogDensity=config.visibility[next.visibility]; scene.fogColor=night?color('#14202e'):color('#bfccc7');
+    scene.fogMode=Scene.FOGMODE_EXP2;
+    const weatherFog=weather==='fog' ? .026 : weather==='rain' ? .0035 : 0;
+    scene.fogDensity=Math.max(config.visibility[next.visibility],weatherFog);
+    scene.fogColor=weather==='fog'?color(night?'#27313a':'#aeb9b7'):night?color('#14202e'):color('#bfccc7');
+    if (weather==='rain'&&!rainEnabled) { rain.start(); rainEnabled=true; }
+    else if (weather!=='rain'&&rainEnabled) { rain.stop(); rainEnabled=false; }
     if (sky) sky.visibility=night?0:1;
     scene.clearColor.set(night?.022:.62,night?.035:.74,night?.065:.8,1);
     for (const lamp of lamps) lamp.intensity=night?150:0;

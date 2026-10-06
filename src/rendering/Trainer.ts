@@ -228,7 +228,7 @@ export class Trainer {
     if (!this.sim || this.controller.signal.aborted) return;
     const now = performance.now(), dt = this.previousFrame ? Math.min(.1, (now - this.previousFrame) / 1000) : 0; this.previousFrame = now;
     const alpha = this.options.controller.alpha;
-    const conditionSignature=`${this.sim.conditions.timeOfDay}/${this.sim.conditions.visibility}`;
+    const conditionSignature=`${this.sim.conditions.timeOfDay}/${this.sim.conditions.visibility}/${this.sim.conditions.weather??'clear'}`;
     if(conditionSignature!==this.conditionSignature){this.world?.setConditions(this.sim.conditions);this.conditionSignature=conditionSignature;}
     if (this.options.mode === 'eo') {
       const eo=this.options.controller.sensorEngine.eo;

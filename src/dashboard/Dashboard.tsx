@@ -55,7 +55,7 @@ export default function Dashboard() {
   return <main className={'dashboard '+(dockOpen?'':'dock-collapsed ')+(objectsOpen?'objects-open':'')}>
     <header className="dash-header">
       <a className="dash-brand" href={appLink('dashboard')} aria-label="Project Interceptor dashboard"><span className="brand-symbol">⌖</span><span><b>INTERCEPTOR</b><small>INSTRUCTOR CONSOLE</small></span></a>
-      <nav aria-label="App views"><a href={appLink('dashboard')} aria-current="page">Command map</a><a href={appLink('trainer')}>Training console ↗</a><a href={appLink('observer')}>Ground observer ↗</a></nav>
+      <nav aria-label="App views"><a href={appLink('progress')}>Curriculum ↗</a><a href={appLink('dashboard')} aria-current="page">Command map</a><a href={appLink('trainer')}>Training console ↗</a><a href={appLink('observer')}>Ground observer ↗</a></nav>
       <div className="preview-badge"><i/>SHARED SESSION<span> / PHASE 03</span></div>
       <button className="dock-toggle" onClick={()=>setDockOpen(v=>!v)} aria-expanded={dockOpen} aria-controls="support-dock">{dockOpen?'Hide':'Show'} assistant</button>
     </header>

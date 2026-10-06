@@ -1,0 +1,514 @@
+{
+  "source": "https://kenney.nl/assets/furniture-kit",
+  "author": "Kenney",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "description": "Fictional command room assembled from imported Furniture Kit modules. Module transforms are authored in metres.",
+  "sha256": "2f6c436e890eb3163db3e0f15fc70deeeeeb04ef4c2fa7d8782c5ab94ceb7dd1",
+  "placements": [
+    {
+      "model": "floorFull",
+      "position": [
+        -3,
+        0,
+        -2
+      ],
+      "size": [
+        2,
+        0.12,
+        2
+      ],
+      "heading": 0
+    },
+    {
+      "model": "floorFull",
+      "position": [
+        -3,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        0.12,
+        2
+      ],
+      "heading": 0
+    },
+    {
+      "model": "floorFull",
+      "position": [
+        -3,
+        0,
+        2
+      ],
+      "size": [
+        2,
+        0.12,
+        2
+      ],
+      "heading": 0
+    },
+    {
+      "model": "floorFull",
+      "position": [
+        -1,
+        0,
+        -2
+      ],
+      "size": [
+        2,
+        0.12,
+        2
+      ],
+      "heading": 0
+    },
+    {
+      "model": "floorFull",
+      "position": [
+        -1,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        0.12,
+        2
+      ],
+      "heading": 0
+    },
+    {
+      "model": "floorFull",
+      "position": [
+        -1,
+        0,
+        2
+      ],
+      "size": [
+        2,
+        0.12,
+        2
+      ],
+      "heading": 0
+    },
+    {
+      "model": "floorFull",
+      "position": [
+        1,
+        0,
+        -2
+      ],
+      "size": [
+        2,
+        0.12,
+        2
+      ],
+      "heading": 0
+    },
+    {
+      "model": "floorFull",
+      "position": [
+        1,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        0.12,
+        2
+      ],
+      "heading": 0
+    },
+    {
+      "model": "floorFull",
+      "position": [
+        1,
+        0,
+        2
+      ],
+      "size": [
+        2,
+        0.12,
+        2
+      ],
+      "heading": 0
+    },
+    {
+      "model": "floorFull",
+      "position": [
+        3,
+        0,
+        -2
+      ],
+      "size": [
+        2,
+        0.12,
+        2
+      ],
+      "heading": 0
+    },
+    {
+      "model": "floorFull",
+      "position": [
+        3,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        0.12,
+        2
+      ],
+      "heading": 0
+    },
+    {
+      "model": "floorFull",
+      "position": [
+        3,
+        0,
+        2
+      ],
+      "size": [
+        2,
+        0.12,
+        2
+      ],
+      "heading": 0
+    },
+    {
+      "model": "wall",
+      "position": [
+        -3,
+        0.12,
+        3.05
+      ],
+      "size": [
+        2,
+        3,
+        0.15
+      ],
+      "heading": 0
+    },
+    {
+      "model": "wall",
+      "position": [
+        -1,
+        0.12,
+        3.05
+      ],
+      "size": [
+        2,
+        3,
+        0.15
+      ],
+      "heading": 0
+    },
+    {
+      "model": "wall",
+      "position": [
+        1,
+        0.12,
+        3.05
+      ],
+      "size": [
+        2,
+        3,
+        0.15
+      ],
+      "heading": 0
+    },
+    {
+      "model": "wall",
+      "position": [
+        3,
+        0.12,
+        3.05
+      ],
+      "size": [
+        2,
+        3,
+        0.15
+      ],
+      "heading": 0
+    },
+    {
+      "model": "wall",
+      "position": [
+        -4.05,
+        0.12,
+        -2
+      ],
+      "size": [
+        2,
+        3,
+        0.15
+      ],
+      "heading": 1.5707963267948966
+    },
+    {
+      "model": "wall",
+      "position": [
+        -4.05,
+        0.12,
+        0
+      ],
+      "size": [
+        2,
+        3,
+        0.15
+      ],
+      "heading": 1.5707963267948966
+    },
+    {
+      "model": "wall",
+      "position": [
+        -4.05,
+        0.12,
+        2
+      ],
+      "size": [
+        2,
+        3,
+        0.15
+      ],
+      "heading": 1.5707963267948966
+    },
+    {
+      "model": "wall",
+      "position": [
+        4.05,
+        0.12,
+        -2
+      ],
+      "size": [
+        2,
+        3,
+        0.15
+      ],
+      "heading": 1.5707963267948966
+    },
+    {
+      "model": "wall",
+      "position": [
+        4.05,
+        0.12,
+        0
+      ],
+      "size": [
+        2,
+        3,
+        0.15
+      ],
+      "heading": 1.5707963267948966
+    },
+    {
+      "model": "wall",
+      "position": [
+        4.05,
+        0.12,
+        2
+      ],
+      "size": [
+        2,
+        3,
+        0.15
+      ],
+      "heading": 1.5707963267948966
+    },
+    {
+      "model": "wall",
+      "position": [
+        -3,
+        0.12,
+        -3.05
+      ],
+      "size": [
+        2,
+        3,
+        0.15
+      ],
+      "heading": 0
+    },
+    {
+      "model": "wallDoorway",
+      "position": [
+        -1,
+        0.12,
+        -3.05
+      ],
+      "size": [
+        2,
+        3,
+        0.15
+      ],
+      "heading": 0
+    },
+    {
+      "model": "wall",
+      "position": [
+        1,
+        0.12,
+        -3.05
+      ],
+      "size": [
+        2,
+        3,
+        0.15
+      ],
+      "heading": 0
+    },
+    {
+      "model": "wall",
+      "position": [
+        3,
+        0.12,
+        -3.05
+      ],
+      "size": [
+        2,
+        3,
+        0.15
+      ],
+      "heading": 0
+    },
+    {
+      "model": "desk",
+      "position": [
+        -2.3,
+        0.12,
+        0.9
+      ],
+      "size": [
+        1.8,
+        0.78,
+        0.85
+      ],
+      "heading": 0
+    },
+    {
+      "model": "chairDesk",
+      "position": [
+        -2.3,
+        0.12,
+        -0.15
+      ],
+      "size": [
+        0.65,
+        1.1,
+        0.7
+      ],
+      "heading": 0
+    },
+    {
+      "model": "computerScreen",
+      "position": [
+        -2.3,
+        0.9,
+        1.05
+      ],
+      "size": [
+        0.7,
+        0.5,
+        0.15
+      ],
+      "heading": 0
+    },
+    {
+      "model": "computerKeyboard",
+      "position": [
+        -2.3,
+        0.91,
+        0.65
+      ],
+      "size": [
+        0.5,
+        0.04,
+        0.2
+      ],
+      "heading": 0
+    },
+    {
+      "model": "desk",
+      "position": [
+        2.3,
+        0.12,
+        0.9
+      ],
+      "size": [
+        1.8,
+        0.78,
+        0.85
+      ],
+      "heading": 0
+    },
+    {
+      "model": "chairDesk",
+      "position": [
+        2.3,
+        0.12,
+        -0.15
+      ],
+      "size": [
+        0.65,
+        1.1,
+        0.7
+      ],
+      "heading": 0
+    },
+    {
+      "model": "computerScreen",
+      "position": [
+        2.3,
+        0.9,
+        1.05
+      ],
+      "size": [
+        0.7,
+        0.5,
+        0.15
+      ],
+      "heading": 0
+    },
+    {
+      "model": "computerKeyboard",
+      "position": [
+        2.3,
+        0.91,
+        0.65
+      ],
+      "size": [
+        0.5,
+        0.04,
+        0.2
+      ],
+      "heading": 0
+    },
+    {
+      "model": "televisionModern",
+      "position": [
+        0,
+        1.15,
+        2.84
+      ],
+      "size": [
+        3.1,
+        1.65,
+        0.15
+      ],
+      "heading": 0
+    },
+    {
+      "model": "lampSquareCeiling",
+      "position": [
+        0,
+        2.95,
+        0
+      ],
+      "size": [
+        1.2,
+        0.1,
+        1.2
+      ],
+      "heading": 0
+    }
+  ]
+}

@@ -41,7 +41,7 @@ export default function EOPanel({ onClose, embedded = false }: { onClose?: () =>
     };
     frame=requestAnimationFrame(paintThermal);
     return()=>{mounted=false;cancelAnimationFrame(frame);renderer?.dispose();};
-  },[controller,snapshot.postId]);
+  },[controller,snapshot.postId,snapshot.environmentSetting]);
   function adjust(patch:Partial<{bearing:number;elevation:number;zoom:boolean}>) {
     controller.command({type:'eo',bearing:eo.bearing,elevation:eo.elevation,zoom,...patch});
   }

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
+import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import type { GeoJSONSource, Map as LibreMap, Marker } from 'maplibre-gl';
 import type { FeatureCollection, Feature, Geometry } from 'geojson';
 import 'maplibre-gl/dist/maplibre-gl.css';
+maplibregl.setWorkerUrl(mapWorkerUrl);
 import { assetUrl } from '../routing';
 import { offsetPosition, postById, posts } from './posts';
 import type { GeographicPosition, MapLayers, SelectedObject, SessionSnapshot } from './types';

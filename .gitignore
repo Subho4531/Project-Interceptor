@@ -37,3 +37,4 @@ tools/**/obj/
 tools/.nuget/
 tools/.dotnet-home/
 artifacts/qa/
+assets-source/command-room/furniture/

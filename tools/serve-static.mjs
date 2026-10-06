@@ -14,7 +14,7 @@ createServer(async (req, res) => {
     const relativePath = requestPath.slice(mount.length) || '/';
     let file = path.resolve(root, '.' + relativePath);
     if (file !== root && !file.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
-    if (file === root || /^\/(dashboard|trainer|observer)\/?$/.test(relativePath) || /^\/aar\/[^/]+\/?$/.test(relativePath)) file = path.join(root, 'index.html');
+    if (file === root || /^\/(dashboard|trainer|observer|progress|room)\/?$/.test(relativePath) || /^\/aar\/[^/]+\/?$/.test(relativePath)) file = path.join(root, 'index.html');
     else if ((await stat(file)).isDirectory()) file = path.join(file, 'index.html');
     const b = await readFile(file); res.writeHead(200, { 'Content-Type': types[path.extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-cache' }); res.end(b);
   } catch { res.writeHead(404).end('Not found'); }

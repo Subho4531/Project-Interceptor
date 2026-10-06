@@ -1,6 +1,6 @@
 # Indian border dashboard and simulator integration plan
 
-Status: Shared session and Phase 3 regional worlds implemented. All three environments verified in Chrome. User requested stopping after environment delivery; extended dashboard/sensor acceptance remains pending. Phase 4 remains planned. See [Phase 1 delivery](DASHBOARD_PHASE1.md) and [verification](../VERIFICATION.md).
+Status: Historical dashboard delivery plan. Shared session and Phase 3 regional worlds were implemented; extended dashboard/sensor acceptance remains pending. The sensor-led trainee path, weighted scoring, AAR and VR are now specified in [PRD v4](PRD.md) and the [current roadmap](IMPLEMENTATION_PLAN.md). See [Phase 1 delivery](DASHBOARD_PHASE1.md) and [verification](../VERIFICATION.md).
 
 Working project: `C:\Users\subho\OneDrive\Documents\Project Interceptor`.
 

@@ -1,6 +1,6 @@
 # Project Interceptor
 
-Three regional border training environments are implemented in this project. The latest instruction narrowed delivery to finishing these environments and stopping; extended dashboard/sensor verification has been deferred.
+Three regional border training environments and an instructor dashboard are implemented. The [revised PRD](docs/PRD.md) and [implementation roadmap](docs/IMPLEMENTATION_PLAN.md) define the next sensor-led training loop. Weighted scoring, persistent AAR, competency progression, a command-room interior and VR are planned work.
 
 ## Run locally
 
@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Open /trainer for ground observation, or /dashboard to select a post. A production static server is currently available at http://127.0.0.1:4181/trainer.
+Open /trainer for the current ground observer or /dashboard to select a post. The planned sensor-led trainee console will use /trainer in a later implementation phase.
 
 ## Training posts
 
@@ -46,7 +46,7 @@ Verified: 75 tests, production build, all three worlds in Chrome at 1280 x 720, 
 
 ## Assets and evidence
 
-[Regional sources and import instructions](docs/REGIONAL_ASSETS.md), [asset manifest](docs/ASSET_MANIFEST.md), [verification record](VERIFICATION.md).
+[PRD](docs/PRD.md), [implementation roadmap](docs/IMPLEMENTATION_PLAN.md), [technical architecture](docs/ARCHITECTURE.md), [regional sources and import instructions](docs/REGIONAL_ASSETS.md), [asset manifest](docs/ASSET_MANIFEST.md), [verification record](VERIFICATION.md).
 
 Raw crops, source models, hashes and licences are retained under assets-source/. Optimized worlds are public/assets/regions/; compound modules are public/assets/environment/. Geranium retains its noncommercial/ShareAlike licence. No cookies or API credentials are stored.
 

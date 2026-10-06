@@ -1,5 +1,7 @@
 # Vibecoding Playbook & Agent Guidelines (PlayCanvas WebGL Engine)
 
+> Historical scaffold only. Its PlayCanvas, Tailwind, folder layout and scoring prompts do not describe the implemented app or approved next training path. Use [PRD v4](PRD.md), the [current architecture](ARCHITECTURE.md), [implementation roadmap](IMPLEMENTATION_PLAN.md), and repository [AGENTS.md](../AGENTS.md) for new work.
+
 ## Project: Drone Threat Simulation Trainer
 **Philosophy**: Architect in pure TypeScript, render with PlayCanvas Engine (Unreal-grade realism in browser), style tactical HUD in Tailwind CSS, steer via targeted Agent Prompts.
 

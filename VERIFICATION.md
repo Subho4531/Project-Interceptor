@@ -1,5 +1,9 @@
 # Verification record
 
+## Documentation alignment — 6 October 2026
+
+PRD v4, the phased implementation roadmap, architecture, repository guidance and README now describe the actual Babylon.js application and the proposed sensor-led training path. This is a documentation update only: it adds no new scored exercise, RF channel, persistence, competency system or VR capability. Earlier implementation and browser results below remain historical evidence. Documentation links and the repository diff were checked; no application tests were required for these text-only changes.
+
 ## Three regional environments — 6 October 2026
 
 Delivery narrowed by the user's latest instruction to finish the three training posts and stop.

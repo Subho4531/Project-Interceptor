@@ -36,6 +36,7 @@ export class Trainer {
   private nextUI = 0;
   private cleanup: (() => void)[] = [];
   private initialized = false;
+  private paneVisible = true;
   private warnings: string[] = [];
   private conditionSignature = '';
   private probeCache?: {x:number;z:number;sampled:number;rendered?:number;error?:number}[];
@@ -91,7 +92,7 @@ export class Trainer {
     this.world.setConditions(this.sim.conditions); this.setQuality(this.options.quality); this.warnings = warnings;
     this.initialized = true;
     this.callbacks.progress('Ready', 1); this.callbacks.ready(warnings, this.sim.config.entities.every(e => available.has(e.assetId)));
-    this.publish(); this.engine.runRenderLoop(this.frame);
+    this.publish(); this.applyLoop();
     // Explicit diagnostic mode is opt-in. Trainee HUD never receives scenario truth.
     if (this.options.mode !== 'eo' && new URLSearchParams(location.search).has('qa')) {
       Object.assign(window, { __trainerQA: {
@@ -117,13 +118,14 @@ export class Trainer {
     this.on(document, 'visibilitychange', () => {
       this.keys.clear(); this.previousFrame = 0;
       if (document.hidden) this.options.controller.command({type:'pause',reason:'hidden-tab'});
-      if (document.hidden) { if (document.pointerLockElement === this.canvas) document.exitPointerLock(); this.engine.stopRenderLoop(this.frame); }
-      else if (this.initialized && !this.controller.signal.aborted) this.engine.runRenderLoop(this.frame);
+      if (document.hidden) if (document.pointerLockElement === this.canvas) document.exitPointerLock();
+      this.applyLoop();
       this.publish();
     });
     this.on(window, 'blur', () => { this.keys.clear(); this.pause('window-blur'); });
     this.on(document, 'keydown', e => {
       const event = e as KeyboardEvent;
+      if (this.dormantInput()) return;
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
       if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ShiftLeft', 'ShiftRight'].includes(event.code) && document.pointerLockElement === this.canvas) { event.preventDefault(); this.keys.add(event.code); }
       if (event.repeat) return;
@@ -136,7 +138,7 @@ export class Trainer {
     });
     this.on(document, 'keyup', e => this.keys.delete((e as KeyboardEvent).code));
     this.on(document, 'mousemove', e => {
-      if (document.pointerLockElement !== this.canvas || this.sim?.status !== 'running') return;
+      if (this.dormantInput() || document.pointerLockElement !== this.canvas || this.sim?.status !== 'running') return;
       const event = e as MouseEvent, sensitivity = this.zoom ? .00055 : .0018;
       this.camera.rotation.y += event.movementX * sensitivity;
       this.camera.rotation.x = Math.max(-1.4, Math.min(1.4, this.camera.rotation.x + event.movementY * sensitivity));
@@ -145,6 +147,9 @@ export class Trainer {
     this.on(this.canvas, 'mousedown', e => { if ((e as MouseEvent).button === 2 && this.sim?.status === 'running') this.setZoom(!this.zoom); });
     this.on(this.canvas, 'click', () => { if (this.sim?.status === 'paused') void this.enter(); });
   }
+  /** Hidden panes and background tabs must not react to stray keys or mouse events:
+   *  the trainer's document-level listeners fire for the whole app once panes are kept alive. */
+  private dormantInput() { return !this.paneVisible || document.hidden || this.controller.signal.aborted; }
   async enter() {
     if (!this.sim || document.hidden || this.sim.status === 'completed') return;
     if (this.sim.config.training && this.sim.config.entities.some(e => !this.templates.has(e.assetId))) { this.callbacks.notice('All required aerial assets must load before this exercise can start.'); return; }
@@ -219,6 +224,24 @@ export class Trainer {
     this.camera.setTarget(vector(entity.position)); this.camera.fov = .7; this.publish();
   }
   walkForQA(dx: number,dz: number) { if (!new URLSearchParams(location.search).has('qa')) return; this.move(dx,dz); this.publish(); }
+  /** Park or reveal this renderer's pane. While parked the render loop stops (no GPU
+   *  work) but the scene, templates, camera and shared-session binding stay intact so
+   *  returning to the surface is instant — the whole point of keep-alive panes. */
+  setVisible(visible: boolean) {
+    if (this.paneVisible === visible) return;
+    this.paneVisible = visible;
+    this.applyLoop();
+  }
+  private applyLoop() {
+    if (!this.initialized) return;
+    const active = this.paneVisible && !document.hidden;
+    if (active) { this.engine.runRenderLoop(this.frame); this.engine.resize(); }
+    else {
+      this.engine.stopRenderLoop(this.frame); this.keys.clear();
+      if (document.pointerLockElement === this.canvas) document.exitPointerLock();
+    }
+    this.previousFrame = 0; this.publish();
+  }
   private publish() {
     if (!this.sim) return;
     this.callbacks.state({ time: this.sim.time, status: this.sim.status, zoom: this.zoom, heading: this.heading(), conditions: { ...this.sim.conditions }, fps: Math.round(this.engine.getFps()), training:this.sim.trainingState() });

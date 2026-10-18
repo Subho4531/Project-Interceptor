@@ -1,4 +1,7 @@
 import type { EnvironmentConfig, ScenarioConfig, ExerciseId, LandscapePlacement } from './types';
+/** Training-scale operation-area radius. Sensor-led transits spawn and despawn on this
+ *  ring; the radar scope projects it edge-to-edge. Illustrative training scale. */
+export { OPERATION_RADIUS } from './world';
 import { terrainHeight } from './world';
 import { createTrainingScenario, trainingScenarios, sensorScenarios } from './trainingScenarios';
 export const environment: EnvironmentConfig = {

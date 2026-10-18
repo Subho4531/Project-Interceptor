@@ -1,8 +1,8 @@
 import {describe,it,expect} from 'vitest';
 import {Simulation,FIXED_STEP,sampleRoute} from './Simulation';
 import {environments,createScenario} from './config';
-import {trainingScenarios} from './trainingScenarios';
-import {terrainHeight} from './world';
+import {trainingScenarios,transitRoute} from './trainingScenarios';
+import {terrainHeight,OPERATION_RADIUS} from './world';
 import type {ContactReport,TrainingScenarioId} from './types';
 
 const assets = new Set(['sketchfab-fpv','sketchfab-orlan','sketchfab-lancet','sketchfab-geran']);
@@ -96,5 +96,40 @@ describe('contact assessment and review',()=>{
   it('does not start a graded exercise with missing required assets or while hidden',()=>{
     const sim=new Simulation(createScenario(environments[0],'swarm'),environments[0],new Set()); sim.start(); expect(sim.status).toBe('ready');
     const hidden=create(); hidden.setHidden(true); hidden.start(); expect(hidden.status).toBe('ready');
+  });
+});
+
+describe('sensor-led transit profiles',()=>{
+  const transitScenarios=['mixed','friendly','coordinated'] as const;
+  for (const map of environments) {
+    it.each(transitScenarios)('%s ingresses and egresses across the operation ring on '+map.id,(id)=>{
+      const config=createScenario(map,id);
+      for(const transit of config.entities){
+        const entry=Math.hypot(transit.route[0].x,transit.route[0].z);
+        const exit=Math.hypot(transit.route.at(-1)!.x,transit.route.at(-1)!.z);
+        expect(Math.abs(entry-OPERATION_RADIUS)).toBeLessThan(18);
+        expect(Math.abs(exit-OPERATION_RADIUS)).toBeLessThan(18);
+        const nearest=Math.min(...transit.route.map(point=>Math.hypot(point.x,point.z)));
+        expect(nearest).toBeLessThan(240);
+        const chord=transit.route.slice(1).reduce((total,point,index)=>total+Math.hypot(point.x-transit.route[index].x,point.y-transit.route[index].y,point.z-transit.route[index].z),0);
+        const despawnTime=config.quietPeriod+transit.spawnTime+chord/transit.speed;
+        // The contact must leave the observation ring, coast and be lost before the
+        // exercise auto-completes - an unacknowledged report window really expires.
+        expect(despawnTime+4).toBeLessThan(config.training!.duration-1.5);
+      }
+    });
+  }
+  it('familiarisation routes stay inside the training area (not ring-to-ring transits)',()=>{
+    const config=createScenario(environments[0],'low-ingress');
+    const entry=Math.hypot(config.entities[0].route[0].x,config.entities[0].route[0].z);
+    expect(entry).toBeLessThan(320);
+  });
+  it('mixed delivers one straight and one parabolic profile',()=>{
+    const straight=transitRoute({seed:26052,key:'mixed-1',directionDeg:130,laneOffset:175,baseY:55,profile:'straight'});
+    expect(Math.max(...straight.map(point=>point.y))-Math.min(...straight.map(point=>point.y))).toBeLessThan(2);
+    const arc=transitRoute({seed:26052,key:'mixed-2',directionDeg:310,laneOffset:-150,baseY:38,profile:'parabolic',lift:18});
+    const crest=Math.max(...arc.map(point=>point.y));
+    expect(arc[2].y).toBe(crest);
+    expect(crest).toBeGreaterThan(Math.min(...arc.map(point=>point.y))+12);
   });
 });

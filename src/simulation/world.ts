@@ -1,5 +1,9 @@
 import type { Vec3, Bounds, Obstacle, EnvironmentConfig } from './types';
 import { getTerrainSurface } from './TerrainSurface';
+/** Training-scale operation-area radius. Sensor-led transit profiles (trainingScenarios)
+ *  spawn and despawn contacts on this ring and the radar scope projects it edge-to-edge.
+ *  Illustrative training scale, not a field-performance specification. */
+export const OPERATION_RADIUS = 700;
 type Terrain = EnvironmentConfig['terrain'];
 const defaultTerrain: Terrain = { size: 2400, subdivisions: 240, profile: 'rural', tint: '#b8b59a' };
 export function rawTerrainHeight(x: number, z: number, terrain: Terrain = defaultTerrain): number {

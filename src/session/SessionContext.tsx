@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useSyncExternalStore, t
 import { SessionController } from './SessionController';
 import { saveAttempt, type ExerciseCheckpoint } from '../training/AttemptStore';
 import { archiveAttempt } from '../training/Archive';
+import { prefetchWorkspaceBundles } from '../ui/workspacePrefetch';
 
 const Context = createContext<SessionController | null>(null);
 export function SessionProvider({ children }: { children: ReactNode }) {
@@ -9,6 +10,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     controller.startScheduler();
     void controller.loadAssets();
+    // Warm the 3D workspace route bundles (ground observer, command room) at boot so
+    // switching surfaces during training does not show the Suspense "Preparing" state.
+    void prefetchWorkspaceBundles();
     const checkpoints=new Map<string,ExerciseCheckpoint[]>();
     let lastKey='',queue=Promise.resolve();
     const persist=()=>{

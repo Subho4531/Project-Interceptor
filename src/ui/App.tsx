@@ -14,7 +14,7 @@ const timecode = elapsed;
 function Icon({ type }: { type: 'pause' | 'reset' | 'settings' | 'arrow' }) {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">{type === 'pause' ? <><path d="M8 5v14M16 5v14" /></> : type === 'reset' ? <><path d="M4 10a8 8 0 1 1 1 7M4 4v6h6" /></> : type === 'settings' ? <><path d="M4 7h16M4 17h16" /><circle cx="9" cy="7" r="2" fill="currentColor" /><circle cx="15" cy="17" r="2" fill="currentColor" /></> : <path d="M4 12h15m-6-6 6 6-6 6" />}</svg>;
 }
-export default function App() {
+export default function App({ paneVisible = true }: { paneVisible?: boolean }) {
   const controller = useSession(), session = useSessionSnapshot();
   const canvas = useRef<HTMLCanvasElement>(null), trainer = useRef<Trainer | null>(null);
   const [state, setState] = useState(initial), [progress, setProgress] = useState({ label: 'Initializing renderer', value: 0 });
@@ -42,11 +42,11 @@ export default function App() {
   },[newestContact,state.status]);
   useEffect(() => {
     const listener = (event:KeyboardEvent) => {
-      if (event.code !== 'KeyC' || event.repeat || event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement || !state.training || !['running','paused'].includes(state.status)) return;
+      if (event.code !== 'KeyC' || event.repeat || !paneVisible || event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement || !state.training || !['running','paused'].includes(state.status)) return;
       event.preventDefault(); trainer.current?.pause('review-reports'); setSettings(false); setContactPanel(true);
     };
     document.addEventListener('keydown',listener); return () => document.removeEventListener('keydown',listener);
-  },[state.training,state.status]);
+  },[state.training,state.status,paneVisible]);
   useEffect(() => { const controller = new AbortController(); void fetch(assetUrl('./assets/credits.json'),{signal:controller.signal}).then(r => { if (!r.ok) throw new Error('Credits unavailable'); return r.json(); }).then(setCredits).catch(() => {}); return () => controller.abort(); },[]);
   useEffect(() => {
     if (!canvas.current) return;
@@ -63,11 +63,14 @@ export default function App() {
         notice: n => { if (!mounted) return; setNotice(n); clearTimeout(noticeTimer.current); noticeTimer.current = setTimeout(() => setNotice(''), 4000); },
       }, { controller, quality });
     } catch (e) { setError(String(e)); }
+    if (!paneVisible) trainer.current?.setVisible(false);
     return () => { mounted = false; clearTimeout(noticeTimer.current); trainer.current?.dispose(); trainer.current = null; };
     // A map owns its renderer and resource containers. Dispose it fully before opening another.
     // Conditions, exercise, quality and quiet period are carried into the new map.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [controller, mapId, session.environmentSetting, rendererAttempt]);
+  // Keep-alive parking: routes stay mounted; the pane visibility flips instead of a rebuild.
+  useEffect(() => { trainer.current?.setVisible(paneVisible); }, [paneVisible, ready, rendererAttempt]);
   useEffect(() => { trainer.current?.restoreObserver(); }, [session.sessionId]);
   function conditions(patch: Partial<Conditions>) { trainer.current?.setConditions({ ...state.conditions, ...patch }); }
   function resetExercise() { trainer.current?.reset(); setSettings(false); setContactPanel(false); }
@@ -88,7 +91,6 @@ export default function App() {
       <div className="session"><span className={`status-dot ${running ? 'live' : ''}`} /><span>{ready ? (running ? 'IN SESSION' : state.status === 'completed' ? 'COMPLETE' : state.status === 'paused' ? 'PAUSED' : 'STANDBY') : 'PREPARING'}</span><time>{timecode(state.time)}</time></div>
     </header>
     <div className="hud-actions">
-      <a className="trainer-dashboard-link" href={appLink('trainer')}>Training console ↗</a>
       <a className="trainer-dashboard-link" href={appLink('dashboard')}>Command dashboard ↗</a>
       {running && <button className="icon-button" onClick={() => trainer.current?.pause()} aria-label="Pause session" title="Pause (P)"><Icon type="pause" /></button>}
       <button className="icon-button" onClick={resetExercise} disabled={!ready} aria-label="Reset session" title="Reset session"><Icon type="reset" /></button>

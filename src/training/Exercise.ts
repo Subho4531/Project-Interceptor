@@ -53,7 +53,7 @@ export interface AssistantHypothesis {
 
 export type ExerciseEventType =
   | 'cue-delivered' | 'acknowledged' | 'evidence-requested' | 'evidence-returned'
-  | 'assessment-updated' | 'decision' | 'authorization-status' | 'consequence-observed' | 'exercise-finished';
+  | 'assessment-updated' | 'decision' | 'authorization-status' | 'consequence-observed' | 'contact-escaped' | 'exercise-finished';
 
 export interface ExerciseEvent {
   id: string;
@@ -100,7 +100,7 @@ export interface ExerciseReview {
   chronology: ExerciseEvent[];
   summary: string;
   /** Kept at the root for existing review clients; contacts contains the full authored truth. */
-  groundTruth: ExerciseTruth & { contacts: Array<{ contactId: string } & ExerciseTruth> };
+  groundTruth: ExerciseTruth & { contacts: Array<{ contactId: string; escaped?: boolean } & ExerciseTruth> };
 }
 
 export interface ExerciseState {
@@ -125,6 +125,9 @@ export interface ExerciseEngineOptions {
   /** Test and authored-fixture hook; the default is Basic Detection. */
   fixture?: ExerciseFixtureId;
 }
+
+/** Entity ids whose transit route has ended (they left the operation area). */
+export type DespawnedIds = ReadonlySet<string>;
 
 type Fixture = Exclude<ExerciseFixtureId, 'seeded'>;
 type RequestType = 'request-eo' | 'request-rf' | 'request-roster' | 'request-history';
@@ -208,6 +211,9 @@ export class ExerciseEngine {
   private readonly authorizationByContact = new Map<string, 'pending' | 'granted' | 'denied'>();
   private readonly verificationContacts = new Set<string>();
   private readonly acknowledgementTimes = new Map<string, number>();
+  /** Contacts that left the operation area without a trainee report. */
+  private readonly escapedContacts = new Set<string>();
+  private despawned: DespawnedIds = new Set<string>();
   private selectedContactId?: string;
   private criticalDecisionError = false;
   private review?: ExerciseReview;
@@ -218,10 +224,11 @@ export class ExerciseEngine {
     this.fixture = resolveFixture(options.fixture, this.seed);
   }
 
-  tick(time: number, radarTracks: ExerciseRadarInput[], eoObservations: SensorObservation[]): void {
+  tick(time: number, radarTracks: ExerciseRadarInput[], eoObservations: SensorObservation[], despawned?: DespawnedIds): void {
     if (this.currentStatus === 'completed' || !Number.isFinite(time)) return;
     this.currentTime = Math.max(this.currentTime, Math.max(0, time));
     this.currentStatus = 'running';
+    this.despawned = despawned ?? this.despawned;
     this.latestEOByEntity.clear();
     for (const observation of eoObservations) {
       if (observation.sensorId === 'eo') this.latestEOByEntity.set(observation.entityId, observation);
@@ -388,6 +395,15 @@ export class ExerciseEngine {
     contact.latestRadar = track;
     const view = this.publicTracks.get(contact.contactId);
     if (view) Object.assign(view, this.toPublicTrack(contact, view.firstEvidenceTime));
+    // A transit contact that was never reported by the trainee and whose entity has
+    // left the operation area is scored as unobserved. Stale coasting plots alone do
+    // not escape a contact - terrain-masking can delay reporting for a live UAV.
+    if (!this.escapedContacts.has(contact.contactId) && !this.acknowledgementTimes.has(contact.contactId)
+      && (track.state === 'coasting' || track.state === 'lost') && this.despawned.has(contact.entityId)) {
+      this.escapedContacts.add(contact.contactId);
+      this.recordEvent('contact-escaped', contact.contactId,
+        'The contact left the observation area without a trainee report; it is scored as unobserved.');
+    }
   }
 
   private deliverReadyTasks(): void {
@@ -616,6 +632,8 @@ export class ExerciseEngine {
     });
     const detection = detectionScores.length
       ? roundScore(detectionScores.reduce((sum, score) => sum + score, 0) / detectionScores.length) : 0;
+    const escapedNote = this.escapedContacts.size
+      ? ` ${this.escapedContacts.size} contact(s) left the operation area without a trainee report and scored zero.` : '';
     const coordinatedLead = this.coordinatedLead();
     const classification = contacts.length
       ? this.fixture === 'coordinated'
@@ -637,7 +655,7 @@ export class ExerciseEngine {
       reasons: {
         detection: detection === 100
           ? 'Acknowledged within five simulation seconds of first delivered evidence.'
-          : 'Latency is measured from first delivered evidence until acknowledgement.',
+          : `Latency is measured from first delivered evidence until acknowledgement.${escapedNote}`,
         classification: this.fixture === 'coordinated'
           ? 'The first acknowledged contact is the group lead; its evidence-based assessment applies to the coordinated group, which is reported once.'
           : 'Object type, coordination and affiliation are scored separately; unconfirmed status is accepted when decisive evidence is unavailable.',
@@ -652,7 +670,7 @@ export class ExerciseEngine {
       summary: 'Review the evidence timeline, acknowledge contacts promptly, separate classification from threat, and choose a proportionate high-level action.',
       groundTruth: {
         ...leadTruth,
-        contacts: contacts.map(track => ({ contactId: track.id, ...(this.internalByContactId.get(track.id)?.truth ?? truthFor(this.fixture)) })),
+        contacts: contacts.map(track => ({ contactId: track.id, escaped: this.escapedContacts.has(track.id), ...(this.internalByContactId.get(track.id)?.truth ?? truthFor(this.fixture)) })),
       },
     };
   }

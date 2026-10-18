@@ -68,5 +68,6 @@ describe('state-backed local assistant',()=>{
   });
 });
 describe('route bases',()=>{
-  it.each([['/','/'],['/dashboard','/'],['/trainer/','/'],['/observer','/'],['/aar/session-1','/'],['/project/dashboard','/project/'],['/project/trainer/','/project/'],['/project/observer/','/project/'],['/project/aar/session-1','/project/'],['/project/','/project/']])('resolves %s to %s',(path,base)=>expect(appBase(path)).toBe(base));
+  it.each([['/','/'],['/dashboard','/'],['/observer','/'],['/aar/session-1','/'],['/project/dashboard','/project/'],['/project/observer/','/project/'],['/project/aar/session-1','/project/'],['/project/','/project/']])('resolves %s to %s',(path,base)=>expect(appBase(path)).toBe(base));
+  it('passes through paths of removed routes unchanged',()=>{expect(appBase('/trainer/')).toBe('/trainer/');expect(appBase('/project/trainer/')).toBe('/project/trainer/');});
 });

@@ -13,7 +13,7 @@ npm run dev
 
 Open `/` or `/progress` for profiles, Levels 0–4, and history. `/trainer` provides focused sensor controls; `/room` provides spatial command-room controls and PC VR entry. `/observer` opens the ground-level 3D view and `/dashboard` the instructor sensor wall/map. Reviews open at `/aar/:sessionId`.
 
-`npm run dev:dashboard` launches the development server and opens the dashboard directly. Its default sensor wall shows radar returns, a live EO camera, synthetic thermal visualization and sensor/RF status; use **Tactical map** to switch to the geographic map. The thermal view colourizes the optical render and is not an independent infrared measurement.
+`npm run dev:dashboard` launches the development server and opens the dashboard directly. Its default sensor wall shows radar returns, a live EO camera, synthetic thermal visualization, a simulated RF spectrum waterfall driven by truth-drone presence, and sensor/RF status; use **Tactical map** to switch to the geographic map. The thermal view colourizes the optical render and is not an independent infrared measurement, and the RF spectrum is a fictional visualization, not a receiver.
 
 ## Training posts
 

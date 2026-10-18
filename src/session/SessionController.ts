@@ -19,7 +19,10 @@ export interface ObserverPose { position: Vec3; yaw: number; pitch: number; zoom
 export interface SessionOptions { postId?: PostId; scenarioId?: TrainingScenarioId; availableAssets?: Set<string>; terrain?: Heightfield; }
 export interface TrainingRunSettings { profileId:string; mode:'guided'|'practice'|'assessment'|'demo'; level:0|1|2|3|4; seed:number; scenarioId:TrainingScenarioId; environmentSetting?:EnvironmentSetting; weather?:NonNullable<Conditions['weather']>; }
 const byteCache=new Map<string,Promise<ArrayBuffer>>();
-function fetchBytes(url:string):Promise<ArrayBuffer> {
+/** Shared workspace extras for the ground observer and command room that BABYLON JS
+ *  loads by URL at render time rather than through `getAssetBytes`. They are warmed
+ *  through the byte cache at training start so switching surfaces does not stall. */
+export const WORKSPACE_WARM_URLS=['./assets/environment/ground-normal.jpg','./assets/environment/sky.hdr','./assets/command-room/room.glb'] as const;function fetchBytes(url:string):Promise<ArrayBuffer> {
   let result=byteCache.get(url);
   if(!result){result=fetch(url).then(r=>{if(!r.ok)throw new Error(`${url}: HTTP ${r.status}`);return r.arrayBuffer();}).catch(e=>{byteCache.delete(url);throw e;});byteCache.set(url,result);}
   return result;
@@ -66,6 +69,7 @@ export class SessionController implements SessionAdapter {
   private assetsReady=false;
   private error?:string;
   private loadState:NonNullable<SessionSnapshot['loadState']>='idle';
+  private workspaceWarmPromise?:Promise<'ready'|'partial'>;
   private generation=0;
   private sessionNumber=0;
   private instanceId=`${Date.now().toString(36)}-${Math.random().toString(36).slice(2,9)}`;
@@ -133,7 +137,7 @@ export class SessionController implements SessionAdapter {
     this.events.push({id:`${this.sessionNumber}:${++this.eventSequence}`,time,type,message,source});if(this.events.length>10000)this.events.splice(0,1000);
   }
   private collectEvents(){
-    const pending:{type:string;time:number;message:string}[]=this.sim.events.slice(this.simulationEventCount).map(e=>({type:e.type,time:e.time,message:`${e.type.replaceAll('-',' ')}${e.entityId?` · ${e.entityId}`:''}${e.type==='session-pause'?` (${String(e.payload.reason)})`:''}`}));
+    const pending:{type:string;time:number;message:string}[]=this.sim.events.slice(this.simulationEventCount).map(e=>({type:e.type,time:e.time,message:e.type==='entity-despawn'&&!e.payload.reason?`Contact left the operation area${e.entityId?` · ${e.entityId}`:''}`:`${e.type.replaceAll('-',' ')}${e.entityId?` · ${e.entityId}`:''}${e.type==='session-pause'?` (${String(e.payload.reason)})`:''}`}));
     this.simulationEventCount=this.sim.events.length;
     pending.push(...this.sensorEngine.events.slice(this.sensorEventCount).map(e=>({type:e.type,time:e.time,message:e.message})));
     this.sensorEventCount=this.sensorEngine.events.length;
@@ -163,7 +167,7 @@ export class SessionController implements SessionAdapter {
     for(const listener of this.listeners)listener();
   }
   async loadAssets():Promise<void>{
-    if(this.loadPromise)return this.loadPromise;if(this.assetsReady)return;
+    if(this.loadPromise)return this.loadPromise;if(this.assetsReady){void this.workspaceWarm();return;}
     const generation=this.generation;this.loadState='loading';this.error=undefined;this.refresh();
     this.loadPromise=(async()=>{
       try{
@@ -182,9 +186,36 @@ export class SessionController implements SessionAdapter {
         if(generation!==this.generation)return;
         setTerrainSurface(this.environment.terrain,surface);region.originHeightEGM2008=metadata.originHeightEGM2008;this.regionalMetadata=structuredClone(metadata);
         this.availableAssets=available;this.assetsReady=true;this.loadState='ready';this.rebuild();this.log('assets-ready','Local aircraft and regional terrain validated.');
+        // rebuild() starts a fresh event log, so re-emit the warm receipt after it when the
+        // cached warm resolved before this strict load finished (boot race on the asset chip).
+        void this.workspaceWarm().then(state=>this.emitWarmReceipt(state));
       }catch(error){if(generation===this.generation){const region=this.environment.regional!;for(const url of [region.heightfieldUrl,region.metadataUrl,region.imageryUrl])byteCache.delete(assetUrl(url));this.assetsReady=false;this.loadState='error';this.error=String(error);this.log('assets-error',this.error);}}
       finally{if(generation===this.generation){this.loadPromise=undefined;this.refresh();}}
     })();return this.loadPromise;
+  }
+  /** Preload the observer/command-room extras through the shared byte cache so 3D
+   *  workspace rendering never re-fetches them. Optional assets: any failure
+   *  (missing file or non-browser environment) degrades to 'partial' without
+   *  blocking simulation readiness or breaking the fire-and-forget callers. */
+  workspaceWarm():Promise<'ready'|'partial'>{
+    if(this.workspaceWarmPromise)return this.workspaceWarmPromise;
+    this.workspaceWarmPromise=(async()=>{
+      try{
+        const results=await Promise.allSettled(WORKSPACE_WARM_URLS.map(url=>fetchBytes(assetUrl(url))));
+        const failed=results.filter(result=>result.status==='rejected').length;
+        const state:'ready'|'partial'=failed===0?'ready':'partial';
+        this.emitWarmReceipt(state);
+        return state;
+      }catch(error){this.log('workspaces-partial',`Workspace preload unavailable: ${String(error)}`);this.refresh();return 'partial' as const;}
+    })();
+    return this.workspaceWarmPromise;
+  }
+  /** Publish the warm receipt once per session generation (rebuild resets the log). */
+  private emitWarmReceipt(state:'ready'|'partial'){
+    const already=this.events.some(event=>event.type==='workspaces-ready'||event.type==='workspaces-partial');
+    if(already)return;
+    if(state==='ready'){this.log('workspaces-ready','Ground observer and command room preloaded; workspace switching stays warm.');this.refresh();}
+    else{this.log('workspaces-partial','Workspace preload finished with missing optional asset(s).');this.refresh();}
   }
   command=(command:SimulationCommand,source:'operator'|'assistant'='operator'):CommandResult=>{
     const reject=(message:string)=>{this.log('command-rejected',`${command.type}: ${message}`,source);this.refresh();return {ok:false,message};};
@@ -194,7 +225,7 @@ export class SessionController implements SessionAdapter {
     if(['post','scenario','reset'].includes(command.type)&&active&&this.sim.status!=='completed'){this.eligibilityFlags.add('aborted');this.refresh();}
     let message='';
     switch(command.type){
-      case 'start':if(this.sim.status!=='ready')return reject('Start requires a ready session.');if(!this.assetsReady)return reject(this.error??'Required local assets are loading.');this.sim.start();if((this.sim.status as string)!=='running')return reject('Session cannot start while hidden.');this.updateExercise();message='Session started.';break;
+      case 'start':if(this.sim.status!=='ready')return reject('Start requires a ready session.');if(!this.assetsReady)return reject(this.error??'Required local assets are loading.');void this.workspaceWarm();this.sim.start();if((this.sim.status as string)!=='running')return reject('Session cannot start while hidden.');this.updateExercise();message='Session started.';break;
       case 'pause':if(this.sim.status!=='running')return reject('Session is not running.');if(this.trainingMode==='assessment')this.eligibilityFlags.add('interrupted');this.sim.pause(command.reason??source);message='Session paused; clock held.';break;
       case 'resume':if(this.sim.status!=='paused')return reject('Session is not paused.');this.sim.resume();if((this.sim.status as string)!=='running')return reject('Resume requires a visible tab.');message='Session resumed.';break;
       case 'finish':if(!['running','paused'].includes(this.sim.status))return reject('Start before finishing.');this.sim.finish();this.updateExercise();message='Exercise finished; review ready.';break;
@@ -223,7 +254,7 @@ export class SessionController implements SessionAdapter {
   };
   private updateExercise(){
     this.sensorEngine.update(this.sim.time,this.sim.entities.values(),this.sim.conditions);
-    this.sensorExercise.tick(this.sim.time,this.radarProjection(),this.sensorEngine.observations);
+    this.sensorExercise.tick(this.sim.time,this.radarProjection(),this.sensorEngine.observations,new Set(this.sim.despawnedIds()));
     if(this.sim.status==='completed'&&this.sensorExercise.state().status!=='completed')this.sensorExercise.act({type:'finish'});
   }
   getExerciseState(){return this.sensorExercise.state();}

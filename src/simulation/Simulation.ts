@@ -75,6 +75,8 @@ export class Simulation {
     // No asset identity, route, unseen-contact count or expected answer before completion.
     return {briefing:structuredClone(this.config.training.briefing),reports:structuredClone(this.reports),falseReports:this.falseReports,...(this.review ? {review:structuredClone(this.review)} : {})};
   }
+  /** Transit entities that reached their route end (left the operation area). */
+  despawnedIds(): string[] { return [...this.completed]; }
   finish(reason: ExerciseReview['reason'] = 'operator') {
     const training = this.config.training;
     if (!['running','paused'].includes(this.status)) return;

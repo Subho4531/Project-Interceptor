@@ -19,18 +19,43 @@ async function place(model,position,size,heading=0){
   for(const child of [...importedScene.listChildren()]){importedScene.removeChild(child);centre.addChild(child);}
   wrapper.addChild(centre);scene.addChild(wrapper);importedScene.dispose();placements.push({model,position,size,heading});
 }
+// Floors and boundary walls
 for(const x of [-3,-1,1,3])for(const z of [-2,0,2])await place('floorFull',[x,0,z],[2,.12,2]);
 for(const x of [-3,-1,1,3])await place('wall',[x,.12,3.05],[2,3,.15]);
 for(const x of [-4.05,4.05])for(const z of [-2,0,2])await place('wall',[x,.12,z],[2,3,.15],Math.PI/2);
 for(const x of [-3,-1,1,3])await place(x===-1?'wallDoorway':'wall',[x,.12,-3.05],[2,3,.15]);
-for(const x of [-2.3,2.3]){
-  await place('desk',[x,.12,.9],[1.8,.78,.85]);
-  await place('chairDesk',[x,.12,-.15],[.65,1.1,.7]);
-  await place('computerScreen',[x,.9,1.05],[.7,.5,.15]);
-  await place('computerKeyboard',[x,.91,.65],[.5,.04,.2]);
-}
-await place('televisionModern',[0,1.15,2.84],[3.1,1.65,.15]);
-await place('lampSquareCeiling',[0,2.95,0],[1.2,.1,1.2]);
+
+// Central Tactical Operator Station
+await place('desk',[0,.12,.2],[2.2,.78,.85]);
+await place('chairDesk',[0,.12,-.65],[.65,1.1,.7]);
+await place('computerScreen',[0,.90,.52],[.72,.52,.15]);
+await place('computerScreen',[-.72,.90,.48],[.72,.52,.15],.3);
+await place('computerScreen',[.72,.90,.48],[.72,.52,.15],-.3);
+await place('computerKeyboard',[0,.91,.16],[.5,.04,.2]);
+await place('computerMouse',[.36,.91,.16],[.12,.04,.16]);
+
+// Forward Theater Video Wall
+await place('televisionModern',[0,1.85,2.84],[3.6,2.0,.15]);
+
+// Left & Right Auxiliary Analyst Stations
+await place('desk',[-2.7,.12,.4],[1.8,.78,.85],Math.PI/2);
+await place('chairDesk',[-2.05,.12,.4],[.65,1.1,.7],Math.PI/2);
+await place('laptop',[-2.7,.90,.4],[.45,.25,.35],Math.PI/2);
+
+await place('desk',[2.7,.12,.4],[1.8,.78,.85],-Math.PI/2);
+await place('chairDesk',[2.05,.12,.4],[.65,1.1,.7],-Math.PI/2);
+await place('computerScreen',[2.7,.90,.4],[.7,.5,.15],-Math.PI/2);
+
+// Equipment & Storage
+await place('bookcaseClosed',[-3.6,.12,-1.2],[.8,1.8,.45],Math.PI/2);
+await place('bookcaseClosed',[3.6,.12,-1.2],[.8,1.8,.45],-Math.PI/2);
+await place('trashcan',[-1.25,.12,.2],[.3,.45,.3]);
+
+// Tactical Comms Speakers & Ceiling Lights
+await place('speaker',[-1.9,2.45,2.84],[.28,.48,.22]);
+await place('speaker',[1.9,2.45,2.84],[.28,.48,.22]);
+await place('lampSquareCeiling',[0,2.95,.2],[1.2,.1,1.2]);
+await place('lampSquareCeiling',[0,2.95,-1.5],[1.2,.1,1.2]);
 await document.transform(dedup(),prune(),unpartition());
 const bytes=await io.writeBinary(document);await writeFile(path.join(output,'room.glb'),bytes);
 const license=await readFile(path.join(root,'assets-source/command-room/furniture/License.txt'),'utf8');

@@ -26,6 +26,7 @@ function overlays(snapshot:SessionSnapshot) {
     routes:collection(snapshot.tracks.map(track=>line(track.route))),trails:collection(snapshot.tracks.filter(t=>t.state!=='scheduled').map(track=>line(track.trail))),
     zones:collection(zone.length?[shape(zone)]:[]),coverage:collection([shape(polygon(origin,2200)),line(polygon(origin,1100))]),grid:collection(grid),
     radar:collection((snapshot.sensorTracks??[]).map(t=>({type:'Feature',properties:{id:t.id,label:t.label,state:t.state,age:t.age},geometry:{type:'Point',coordinates:t.geographicPosition}}))),
+    radarTrace:collection((snapshot.sensorTracks??[]).filter(t=>(t.trail??[]).length>1).map(t=>line(t.trail!.map(p=>offsetPosition(origin,p.x,p.z))))),
     eo:collection((snapshot.eoObservations??[]).slice(-40).map(t=>({type:'Feature',properties:{id:t.id},geometry:{type:'Point',coordinates:t.geographicPosition}}))),
   };
 }
@@ -48,7 +49,7 @@ export default function DashboardMap({snapshot,layers,selected,basemap,focus,ove
           satellite:{type:'raster',tiles:['https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg'],tileSize:256,maxzoom:14},
           terrain:{type:'raster',tiles:['https://a.tile.opentopomap.org/{z}/{x}/{y}.png'],tileSize:256,maxzoom:17},
           ...Object.fromEntries(posts.map(post=>['region-'+post.id,{type:'image' as const,url:assetUrl('./assets/regions/'+post.id+'/imagery.jpg'),coordinates:[[-3000,3000],[3000,3000],[3000,-3000],[-3000,-3000]].map(([x,z])=>offsetPosition(post.origin,x,z))}])),
-        },layers:[{id:'background',type:'background',paint:{'background-color':'#152522'}},{id:'satellite',type:'raster',source:'satellite',layout:{visibility:props.current.basemap==='satellite'?'visible':'none'},paint:{'raster-brightness-max':.72,'raster-saturation':-.32}},{id:'terrain',type:'raster',source:'terrain',layout:{visibility:props.current.basemap==='terrain'?'visible':'none'},paint:{'raster-brightness-max':.7,'raster-saturation':-.5}}]},
+        },layers:[{id:'background',type:'background',paint:{'background-color':'#0B0B0B'}},{id:'satellite',type:'raster',source:'satellite',layout:{visibility:props.current.basemap==='satellite'?'visible':'none'},paint:{'raster-brightness-max':.72,'raster-saturation':-.32}},{id:'terrain',type:'raster',source:'terrain',layout:{visibility:props.current.basemap==='terrain'?'visible':'none'},paint:{'raster-brightness-max':.7,'raster-saturation':-.5}}]},
       });
     } catch {setUnsupported(true);setMapStatus('error');return;}
     map.current=instance;setLoaded(false);setMapStatus('loading');setUnsupported(false);
@@ -60,15 +61,16 @@ export default function DashboardMap({snapshot,layers,selected,basemap,focus,ove
       const data=overlays(props.current.snapshot);
       for(const post of posts) instance.addLayer({id:'region-'+post.id,type:'raster',source:'region-'+post.id,layout:{visibility:props.current.basemap==='regional'?'visible':'none'},paint:{'raster-fade-duration':0,'raster-brightness-max':.85,'raster-saturation':-.12}});
       for(const [id,value] of Object.entries(data)) instance.addSource(id,{type:'geojson',data:value});
-      instance.addLayer({id:'grid-lines',type:'line',source:'grid',paint:{'line-color':'#b9c6a0','line-opacity':.17,'line-width':1}});
-      instance.addLayer({id:'coverage-fill',type:'fill',source:'coverage',paint:{'fill-color':'#79b2ac','fill-opacity':.06}});
-      instance.addLayer({id:'coverage-lines',type:'line',source:'coverage',paint:{'line-color':'#82bdb5','line-width':1,'line-opacity':.48}});
-      instance.addLayer({id:'zone-fill',type:'fill',source:'zones',paint:{'fill-color':'#d4bb86','fill-opacity':.08}});
-      instance.addLayer({id:'zone-lines',type:'line',source:'zones',paint:{'line-color':'#ddc799','line-width':1.5,'line-dasharray':[4,3]}});
-      instance.addLayer({id:'route-lines',type:'line',source:'routes',paint:{'line-color':'#bfae82','line-opacity':.62,'line-width':1.5,'line-dasharray':[4,5]}});
-      instance.addLayer({id:'trail-lines',type:'line',source:'trails',paint:{'line-color':'#98d4d0','line-width':2.2}});
-      instance.addLayer({id:'radar-reports',type:'circle',source:'radar',paint:{'circle-radius':7,'circle-color':['match',['get','state'],'lost','#637775','coasting','#c0a77a','#c0b49a'],'circle-opacity':['match',['get','state'],'lost',.3,.8],'circle-stroke-color':'#e4dfc5','circle-stroke-width':1.5}});
-      instance.addLayer({id:'eo-reports',type:'circle',source:'eo',paint:{'circle-radius':3,'circle-color':'#b3c6e0','circle-stroke-color':'#d6e4ef','circle-stroke-width':1}});
+      instance.addLayer({id:'grid-lines',type:'line',source:'grid',paint:{'line-color':'#6A6A6A','line-opacity':.17,'line-width':1}});
+      instance.addLayer({id:'coverage-fill',type:'fill',source:'coverage',paint:{'fill-color':'#00E5FF','fill-opacity':.06}});
+      instance.addLayer({id:'coverage-lines',type:'line',source:'coverage',paint:{'line-color':'#00E5FF','line-width':1,'line-opacity':.48}});
+      instance.addLayer({id:'zone-fill',type:'fill',source:'zones',paint:{'fill-color':'#F59E0B','fill-opacity':.08}});
+      instance.addLayer({id:'zone-lines',type:'line',source:'zones',paint:{'line-color':'#F59E0B','line-width':1.5,'line-dasharray':[4,3]}});
+      instance.addLayer({id:'route-lines',type:'line',source:'routes',paint:{'line-color':'#F59E0B','line-opacity':.62,'line-width':1.5,'line-dasharray':[4,5]}});
+      instance.addLayer({id:'trail-lines',type:'line',source:'trails',paint:{'line-color':'#00E5FF','line-width':2.2}});
+      instance.addLayer({id:'radar-trace',type:'line',source:'radarTrace',paint:{'line-color':'rgba(245,158,11,.55)','line-width':1.6,'line-dasharray':[2,2]}});
+      instance.addLayer({id:'radar-reports',type:'circle',source:'radar',paint:{'circle-radius':7,'circle-color':['match',['get','state'],'lost','#3F3F3F','coasting','#B45309','#F59E0B'],'circle-opacity':['match',['get','state'],'lost',.3,.8],'circle-stroke-color':'#FFFFFF','circle-stroke-width':1.5}});
+      instance.addLayer({id:'eo-reports',type:'circle',source:'eo',paint:{'circle-radius':3,'circle-color':'#FF6B00','circle-stroke-color':'#FFA85C','circle-stroke-width':1}});
       instance.on('click','radar-reports',event=>{const id=event.features?.[0]?.properties?.id;if(typeof id==='string')props.current.onSelect({type:'sensor-track',id});});
       for(const post of posts) {
         const button=document.createElement('button');button.className='post-map-marker';button.setAttribute('aria-label',`Select ${post.name} training post`);
@@ -91,7 +93,7 @@ export default function DashboardMap({snapshot,layers,selected,basemap,focus,ove
     const instance=map.current;if(!instance||!loaded||!instance.getLayer('trail-lines')) return;
     const data=overlays(snapshot);
     for(const [id,value] of Object.entries(data)) (instance.getSource(id) as GeoJSONSource|undefined)?.setData(value);
-    for(const [key,ids] of Object.entries({grid:['grid-lines'],coverage:['coverage-fill','coverage-lines'],zones:['zone-fill','zone-lines'],routes:['route-lines'],trails:['trail-lines'],radar:['radar-reports'],eo:['eo-reports']})) for(const id of ids) instance.setLayoutProperty(id,'visibility',layers[key as keyof MapLayers]&&(!['routes','trails'].includes(key)||layers.truth!==false)?'visible':'none');
+    for(const [key,ids] of Object.entries({grid:['grid-lines'],coverage:['coverage-fill','coverage-lines'],zones:['zone-fill','zone-lines'],routes:['route-lines'],trails:['trail-lines'],radar:['radar-reports','radar-trace'],eo:['eo-reports']})) for(const id of ids) instance.setLayoutProperty(id,'visibility',layers[key as keyof MapLayers]&&(!['routes','trails'].includes(key)||layers.truth!==false)?'visible':'none');
     for(const marker of postMarkers.current) marker.getElement().classList.toggle('selected',marker.getLngLat().lng===postById(snapshot.postId).origin[0]);
     const visibleTracks=layers.truth===false?[]:snapshot.tracks;
     for(const track of visibleTracks) {
@@ -134,7 +136,7 @@ export default function DashboardMap({snapshot,layers,selected,basemap,focus,ove
     <div className="map-caption"><span className="dash-kicker">{overview?'INDIA / REGIONAL OVERVIEW':`${postById(snapshot.postId).state.toUpperCase()} / EXERCISE SECTOR`}</span><h1>{overview?'Three posts. One training picture.':`${postById(snapshot.postId).name} sector`}</h1><span>WGS84 · {basemap==='regional'?'Packaged Sentinel-2 regional imagery':basemap==='satellite'?'Sentinel-2 · 2024 mosaic':'Topographic context'} <i> / </i> SHARED SIMULATION</span></div>
     <div className="map-nav" aria-label="Map navigation"><button aria-label="Zoom map in" onClick={()=>map.current?.zoomIn()}>+</button><button aria-label="Zoom map out" onClick={()=>map.current?.zoomOut()}>−</button><button aria-label="Reset map north" onClick={()=>map.current?.resetNorth()}>N ↑</button></div>
     {mapStatus!=='ready'&&<div className={`map-load-note ${mapStatus==='error'?'has-error':''}`} role="status">{mapStatus==='loading'?'Loading geographic imagery…':unsupported?'Map renderer unavailable. Post coordinates and tracks remain available in the panels.':'Some map tiles are unavailable. Overlays and coordinate details remain available.'}{mapStatus==='error'&&<button onClick={()=>setRetry(value=>value+1)}>Retry map</button>}</div>}
-    <div className="map-legend"><span><i className="legend-post"/>Training post</span><span><i className="legend-track"/>Instructor truth UAV</span><span><i className="legend-zone"/>Protected zone</span><small>Range limits · amber circles: simulated radar · pale blue: EO reports.</small></div>
+    <div className="map-legend"><span><i className="legend-post"/>Training post</span><span><i className="legend-track"/>Instructor truth UAV</span><span><i className="legend-zone"/>Protected zone</span><small>Dashed amber line: traced radar path · simulated radar and EO reports.</small></div>
     <div className="map-coordinates"><span>{coordinates[1].toFixed(5)}° N &nbsp; {coordinates[0].toFixed(5)}° E</span><span>ZOOM {zoom.toFixed(1)} · {overview?'REGION':'1 km grid'}</span></div>
     <div className="map-attribution">{basemap==='regional'?<>Modified Copernicus Sentinel data · regional scene dates in asset provenance · <a href='https://registry.opendata.aws/sentinel-2-l2a-cogs/' target='_blank' rel='noreferrer'>Sentinel-2 / Earth Search</a></>:basemap==='satellite'?<><a href="https://cloudless.eox.at" target="_blank" rel="noreferrer">EOxCloudless</a> by <a href="https://maps.eox.at" target="_blank" rel="noreferrer">EOX</a> · Modified Copernicus Sentinel data 2024 · <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noreferrer">CC BY-NC-SA 4.0</a></>:<><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>, SRTM · <a href="https://opentopomap.org" target="_blank" rel="noreferrer">© OpenTopoMap</a> · CC BY-SA</>}</div>
   </section>;

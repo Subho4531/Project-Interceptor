@@ -68,6 +68,44 @@ function routeAboveTerrain(map: EnvironmentConfig, points: Vec3[]): Vec3[] {
   return result;
 }
 
+/** Seed jitter so each contact ingresses from a slightly different bearing and lane. */
+function transitJitter(seed: number, key: string, spread: number): number {
+  let hash = seed ^ 0x9e3779b9;
+  for (const char of key) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+  hash ^= hash << 13; hash ^= hash >>> 17; hash ^= hash << 5;
+  return (((hash >>> 0) / 4294967295) * 2 - 1) * spread;
+}
+
+/**
+ * Directed UAV transit through the post's operation area (see OPERATION_RADIUS).
+ * The contact spawns on the ingress edge of the 700 m ring at a specific point,
+ * flies a straight or parabolic profile across the observation sector, and
+ * despawns on the far side of the ring - the radar view window is therefore
+ * bounded and the trainee must observe and report inside it.
+ */
+export function transitRoute(options: {
+  seed: number; key: string; directionDeg: number; laneOffset: number;
+  entryRadius?: number; baseY: number; profile: 'straight' | 'parabolic'; lift?: number;
+}): Vec3[] {
+  const entryRadius = options.entryRadius ?? 690;
+  const direction = (options.directionDeg + transitJitter(options.seed, `${options.key}:heading`, 9)) * Math.PI / 180;
+  const lane = options.laneOffset + transitJitter(options.seed, `${options.key}:lane`, 22);
+  // Direction unit vector (heading uses atan2-based dx/dz in this sim) and its left-hand normal.
+  const ux = Math.sin(direction), uz = Math.cos(direction);
+  const nx = -uz, nz = ux;
+  const centre = { x: nx * lane, z: nz * lane };
+  const entry = { x: centre.x - ux * entryRadius, z: centre.z - uz * entryRadius };
+  const exit = { x: centre.x + ux * entryRadius, z: centre.z + uz * entryRadius };
+  const yAt = (t: number) => options.profile === 'straight'
+    ? options.baseY + (options.lift ?? 0) * t
+    : options.baseY + (options.lift ?? 14) * Math.sin(Math.PI * t);
+  return [0, 0.25, 0.5, 0.75, 1].map(t => ({
+    x: entry.x + (exit.x - entry.x) * t,
+    y: yAt(t),
+    z: entry.z + (exit.z - entry.z) * t,
+  }));
+}
+
 export function createTrainingScenario(map: EnvironmentConfig, id: TrainingScenarioId, options: {swarmCount?:number;pairDelay?:number;seed?:number} = {}): ScenarioConfig {
   const selected = [...trainingScenarios,...sensorScenarios].find(s => s.id === id)!;
   const points = (values: number[][]): Vec3[] => values.map(([x,y,z]) => ({x,y,z}));
@@ -83,9 +121,29 @@ export function createTrainingScenario(map: EnvironmentConfig, id: TrainingScena
   } else if (id === 'ambiguous') {
     entities = [];
   } else if (id === 'mixed') {
-    entities = [entity(1,'sketchfab-orlan',5,0,points([[-180,55,200],[-80,55,210],[80,55,215],[190,55,220]])),entity(2,'sketchfab-fpv',6,3,points([[165,25,170],[90,22,100],[20,18,45],[-45,23,-40],[-170,30,-150]]))];
+    // TR 05: two independent transit profiles from different ingress directions.
+    // Contact 1 crosses high and straight; contact 2 ingresses on a parabolic climb.
+    const transit = (number: number, assetId: string, options: { spawnTime: number; speed: number; directionDeg: number; laneOffset: number; baseY: number; profile: 'straight' | 'parabolic'; lift?: number }) =>
+      ({ id: `aerial-${String(number).padStart(2,'0')}`, assetId, spawnTime: options.spawnTime, speed: options.speed,
+        route: routeAboveTerrain(map, transitRoute({ seed, key: `${id}-${number}`, ...options })) });
+    entities = [
+      transit(1, 'sketchfab-orlan', { spawnTime: 0, speed: 17.5, directionDeg: 130, laneOffset: 175, baseY: 55, profile: 'straight' }),
+      transit(2, 'sketchfab-fpv', { spawnTime: 3, speed: 18.5, directionDeg: 310, laneOffset: -150, baseY: 38, profile: 'parabolic', lift: 18 }),
+    ];
   } else if (id === 'friendly') {
-    entities = [entity(1,'sketchfab-orlan',10,0,points([[-180,55,170],[-100,52,140],[0,50,145],[110,54,165],[195,55,195]]))];
+    // TR 03: one straight, level transit approaching from the northwest.
+    entities = [{ id: 'aerial-01', assetId: 'sketchfab-orlan', spawnTime: 0, speed: 20,
+      route: routeAboveTerrain(map, transitRoute({ seed, key: `${id}-1`, directionDeg: 80, laneOffset: 165, baseY: 52, profile: 'straight' })) }];
+  } else if (id === 'coordinated') {
+    // TR 04: two staggered pairs share a matched ingress direction and timing.
+    const pairs = [-1, 1].map(laneSign => laneSign * 30);
+    const speeds = [17.5, 18.5];
+    entities = pairs.flatMap((laneOffset, pairIndex) => [0, 1].map(step => {
+      const number = pairIndex * 2 + step + 1;
+      return { id: `aerial-${String(number).padStart(2,'0')}`, assetId: 'sketchfab-geran',
+        spawnTime: pairIndex * 4, speed: speeds[pairIndex],
+        route: routeAboveTerrain(map, transitRoute({ seed, key: `${id}-${number}`, directionDeg: 245, laneOffset, baseY: 30, profile: 'straight' })) };
+    }));
   } else if (id === 'surveillance') {
     const orbit = Array.from({length:25},(_,i) => { const angle = Math.PI + i * Math.PI / 6; return {x: 100*Math.cos(angle), y: 65, z: 165 + 65*Math.sin(angle)}; });
     entities = [entity(1,'sketchfab-orlan',13,0,[{x:-195,y:65,z:165},...orbit,{x:-200,y:70,z:165}])];

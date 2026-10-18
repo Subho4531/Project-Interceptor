@@ -3,7 +3,7 @@ import { terrainHeight } from './world';
 
 export interface SensorConfig { id: 'radar' | 'eo'; position: Vec3; range: number; updateInterval: number; bearing: number; elevation: number; fieldOfView: number; errorMeters: number; }
 export interface SensorObservation { id: string; sensorId: 'radar' | 'eo'; entityId: string; position: Vec3; time: number; bearing: number; elevation: number; }
-export interface SensorTrack extends SensorObservation { label: string; state: 'acquiring' | 'firm' | 'coasting' | 'lost'; quality: number; age: number; detections: number; missed: number; }
+export interface SensorTrack extends SensorObservation { label: string; state: 'acquiring' | 'firm' | 'coasting' | 'lost'; quality: number; age: number; detections: number; missed: number; /** Observed radar plots for this track, oldest first (bounded). Trainee-visible trace. */ trail?: Array<{ x: number; y: number; z: number; t: number }>; }
 export interface SensorEvent { time: number; type: string; trackId: string; message: string; }
 export type SensorDifficulty = 'foundation' | 'intermediate' | 'advanced';
 export interface SensorEngineOptions { difficulty?: SensorDifficulty; }
@@ -72,6 +72,7 @@ export class SensorEngine {
   private previousEO=new Set<string>();
   private readonly pendingRadarReports: PendingRadarReport[]=[];
   private readonly radarDetectionRun=new Map<string,{second:number;count:number}>();
+  private readonly trails=new Map<string,Array<{x:number;y:number;z:number;t:number}>>();
   private eoOutage=false;
   constructor(public readonly environment: EnvironmentConfig,private seed:number,options:SensorEngineOptions={}) {
     this.difficulty=options.difficulty??'foundation';
@@ -83,7 +84,15 @@ export class SensorEngine {
   /** Public, truth-free summary for training setup and sensor-status displays. */
   getHealthSummary():SensorHealthSummary { return {...this.health}; }
   setEO(bearing:number,elevation:number,zoom:boolean) { this.eo.bearing=((bearing%360)+360)%360;this.eo.elevation=elevation;this.eo.fieldOfView=zoom?8:40; }
-  reset() {this.tracks.clear();this.observations=[];this.events=[];this.nextUpdate=1;this.previousEO.clear();this.pendingRadarReports.length=0;this.radarDetectionRun.clear();this.eoOutage=false;}
+  reset() {this.tracks.clear();this.observations=[];this.events=[];this.nextUpdate=1;this.previousEO.clear();this.pendingRadarReports.length=0;this.radarDetectionRun.clear();this.trails.clear();this.eoOutage=false;}
+  /** Bounded traced path of observed plots for one track id. */
+  private trace(id: string, plot: { x: number; y: number; z: number }, time: number): SensorTrack['trail'] {
+    const trail = this.trails.get(id) ?? [];
+    trail.push({ x: plot.x, y: plot.y, z: plot.z, t: time });
+    if (trail.length > 96) trail.splice(0, trail.length - 96);
+    this.trails.set(id, trail);
+    return trail.map(item => ({ ...item }));
+  }
   update(time:number,entities:Iterable<EntityState>,conditions:Conditions) {
     // The original constructor path remains the baseline: existing sessions and
     // replays receive the exact prior measurement timing and noise profile.
@@ -101,7 +110,7 @@ export class SensorEngine {
         const position={...p,x:p.x+noise(this.seed,second,entity.id,1),z:p.z+noise(this.seed,second,entity.id,2)};
         const bearing=((Math.atan2(position.x-this.radar.position.x,position.z-this.radar.position.z)/DEG)%360+360)%360;
         const state=detections>=2?'firm':'acquiring';
-        const track:SensorTrack={id,sensorId:'radar',entityId:entity.id,label:`Track ${entity.id.split('-').at(-1)}`,position,time,bearing,elevation:Math.atan2(position.y-this.radar.position.y,Math.hypot(position.x,position.z))/DEG,state,quality:Math.min(1,detections/5),age:0,detections,missed:0};
+        const track:SensorTrack={id,sensorId:'radar',entityId:entity.id,label:`Track ${entity.id.split('-').at(-1)}`,position,time,bearing,elevation:Math.atan2(position.y-this.radar.position.y,Math.hypot(position.x,position.z))/DEG,state,quality:Math.min(1,detections/5),age:0,detections,missed:0,trail:this.trace(id,p,time)};
         this.tracks.set(id,track);
         if(old?.state!==state)this.record(time,`radar-${state}`,id,`${track.label}: ${state}.`);
       }
@@ -143,7 +152,7 @@ export class SensorEngine {
         this.radarDetectionRun.set(entity.id,{second,count:detections});
         const position={...p,x:p.x+noise(this.seed,second,entity.id,1,this.health.radarNoiseMeters),z:p.z+noise(this.seed,second,entity.id,2,this.health.radarNoiseMeters)};
         const bearing=((Math.atan2(position.x-this.radar.position.x,position.z-this.radar.position.z)/DEG)%360+360)%360;
-        const track:SensorTrack={id:`radar-${entity.id}`,sensorId:'radar',entityId:entity.id,label:`Track ${entity.id.split('-').at(-1)}`,position,time,bearing,elevation:Math.atan2(position.y-this.radar.position.y,Math.hypot(position.x,position.z))/DEG,state:detections>=2?'firm':'acquiring',quality:Math.min(1,detections/5),age:0,detections,missed:0};
+        const track:SensorTrack={id:`radar-${entity.id}`,sensorId:'radar',entityId:entity.id,label:`Track ${entity.id.split('-').at(-1)}`,position,time,bearing,elevation:Math.atan2(position.y-this.radar.position.y,Math.hypot(position.x,position.z))/DEG,state:detections>=2?'firm':'acquiring',quality:Math.min(1,detections/5),age:0,detections,missed:0,trail:this.trace(`radar-${entity.id}`,p,time)};
         this.pendingRadarReports.push({dueAt:time+this.health.radarLatencySeconds,track});
       }else this.radarDetectionRun.delete(entity.id);
 

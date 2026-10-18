@@ -2,10 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { Trainer } from '../rendering/Trainer';
 import { useSession, useSessionSnapshot } from '../session/SessionContext';
 
+type FeedMode = 'both' | 'optical' | 'thermal';
+const FEED_LABELS: [FeedMode, string][] = [['both', 'Both feeds'], ['optical', 'Optical only'], ['thermal', 'Thermal only']];
+
 /** The thermal pane is a false-colour transformation of the optical render, not an independent IR measurement. */
 export default function EOPanel({ onClose, embedded = false }: { onClose?: () => void; embedded?: boolean }) {
   const controller=useSession(), snapshot=useSessionSnapshot(), canvas=useRef<HTMLCanvasElement>(null), thermal=useRef<HTMLCanvasElement>(null);
   const [progress,setProgress]=useState('Preparing optical station'),[error,setError]=useState(''),[warnings,setWarnings]=useState<string[]>([]),[ready,setReady]=useState(false),[fps,setFps]=useState(0);
+  const [feedMode,setFeedMode]=useState<FeedMode>('both');
+  const feedModeRef=useRef<FeedMode>(feedMode);
+  useEffect(()=>{feedModeRef.current=feedMode;},[feedMode]);
   const eo=controller.sensorEngine.eo, zoom=eo.fieldOfView===8;
   useEffect(()=>{
     if(!canvas.current)return;
@@ -21,7 +27,7 @@ export default function EOPanel({ onClose, embedded = false }: { onClose?: () =>
     }catch(e){setError(String(e));}
     const paintThermal=(now:number)=>{
       if(!mounted)return;
-      if(now-lastThermal>=160 && canvas.current && thermal.current){
+      if(now-lastThermal>=160 && canvas.current && thermal.current && feedModeRef.current!=='optical'){
         lastThermal=now;
         const output=thermal.current,context=output.getContext('2d',{willReadFrequently:true});
         if(context){
@@ -53,10 +59,26 @@ export default function EOPanel({ onClose, embedded = false }: { onClose?: () =>
     {warnings.length>0 && <details><summary>Asset dependencies ({warnings.length})</summary>{warnings.map(warning=><p key={warning}>{warning}</p>)}</details>}
   </div>;
   return <section className="eo-live-panel" aria-label="Simulated EO and thermal views" data-ready={ready} style={embedded ? undefined : {position:'absolute',zIndex:12,right:24,top:100,width:'min(560px, calc(100vw - 48px))',background:'#080c13',border:'1px solid #334155',boxShadow:'0 18px 60px #0009'}}>
-    <header style={{display:'flex',justifyContent:'space-between',padding:'12px 16px',borderBottom:'1px solid #1e293b'}}><strong>EO / THERMAL VIEWS</strong>{onClose&&<button onClick={onClose} aria-label="Close EO live view">Close ×</button>}</header>
-    <div className="eo-feed-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:1,background:'#334851'}}>
-      <div className="eo-feed"><span>LIVE OPTICAL</span><div style={{position:'relative',aspectRatio:'16 / 9'}}><canvas ref={canvas} aria-label="Live view from simulated optical station" style={{display:'block',width:'100%',height:'100%'}} />{!ready&&<p role="status" style={{position:'absolute',inset:'20% 8%',color:'#cbd5e1'}}>{error||progress}</p>}{ready&&<div aria-hidden="true" style={{position:'absolute',left:'50%',top:'50%',width:19,height:19,border:'1px solid #d0dde780',transform:'translate(-50%,-50%)',pointerEvents:'none'}}/>}</div></div>
-      <div className="eo-feed"><span>THERMAL VISUALIZATION</span><canvas ref={thermal} className="eo-thermal-canvas" aria-label="Synthetic thermal visualization derived from optical view" style={{display:'block',width:'100%',aspectRatio:'16 / 9'}} /></div>
+    <header style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,padding:'12px 16px',borderBottom:'1px solid #1e293b'}}>
+      <strong>EO / THERMAL VIEWS</strong>
+      <div className="eo-feed-switch" role="group" aria-label="EO feed display mode">
+        {FEED_LABELS.map(([mode,label])=><button key={mode} aria-pressed={feedMode===mode} onClick={()=>setFeedMode(mode)}>{label}</button>)}
+      </div>
+      {onClose&&<button onClick={onClose} aria-label="Close EO live view">Close ×</button>}
+    </header>
+    <div className={'eo-feed-grid '+(feedMode==='both'?'feed-mode-both':'feed-mode-single')}>
+      <div className={'eo-feed'+(feedMode==='thermal'?' is-hidden':'')}>
+        <span className="eo-feed-label"><span>LIVE OPTICAL</span><span>{zoom?'ZOOM 8° FOV':'WIDE 40° FOV'} · {fps} FPS</span></span>
+        <div className="eo-feed-viewport">
+          <canvas ref={canvas} aria-label="Live view from simulated optical station" />
+          {!ready&&<p className="eo-feed-status" role="status">{error||progress}</p>}
+          {ready&&<div className="eo-reticle-overlay" aria-hidden="true"/>}
+        </div>
+      </div>
+      <div className={'eo-feed'+(feedMode==='optical'?' is-hidden':'')}>
+        <span className="eo-feed-label"><span>THERMAL VISUALIZATION</span><span>FALSE-COLOUR RENDER</span></span>
+        <div className="eo-feed-viewport"><canvas ref={thermal} className="eo-thermal-canvas" aria-label="Synthetic thermal visualization derived from optical view" /></div>
+      </div>
     </div>
     <p className="eo-thermal-note">False-colour EO visualization only; no independent infrared detection or temperature measurement.</p>
     {embedded?<details className="eo-controls"><summary>Camera controls / bearing, elevation, zoom</summary>{controls}</details>:controls}

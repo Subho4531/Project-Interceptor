@@ -5,6 +5,7 @@ import type { EnvironmentSetting } from '../simulation/EnvironmentVariants';
 import type { Conditions } from '../simulation/types';
 import { useSession } from '../session/SessionContext';
 import { appBase, appLink } from '../routing';
+import BrandIcon from './BrandIcon';
 import './sensor-console.css';
 import './progress.css';
 
@@ -44,7 +45,7 @@ export default function ProgressPage(){
     const scenarioId=level<=1?'low-ingress':level===2?(seed%2?'friendly':'ambiguous'):level===3?'mixed':'coordinated';
     const result=controller.prepareTraining({profileId,mode,level,seed,scenarioId,environmentSetting,weather},unlocked);
     if(!result.ok){setNotice(result.message);return;}
-    history.pushState(null,'',appLink('trainer'));window.dispatchEvent(new PopStateEvent('popstate'));
+    history.pushState(null,'',appLink('dashboard'));window.dispatchEvent(new PopStateEvent('popstate'));
   }
   async function createProfile(){
     const label=name.trim();if(!label){setNotice('Enter a trainee name.');return;}
@@ -52,7 +53,7 @@ export default function ProgressPage(){
     try{await saveProfile(profile);setName('');await refresh();setProfileId(profile.id);setNotice('Profile created on this device.');}catch(error){setNotice(String(error));}
   }
   return <main className="sensor-console progress-page">
-    <header className="sensor-topbar"><div className="sensor-brand"><span className="sensor-brand-mark">⌖</span><span><strong>PROJECT INTERCEPTOR</strong><small>CURRICULUM / LOCAL PERFORMANCE</small></span></div><nav><a href={appLink('trainer')}>Training console ↗</a><a href={appLink('room')}>Command room / VR ↗</a><a href={appLink('dashboard')}>Instructor dashboard ↗</a></nav></header>
+    <header className="sensor-topbar"><div className="sensor-brand"><span className="sensor-brand-mark"><BrandIcon size={26} /></span><span><strong>PROJECT INTERCEPTOR</strong><small>CURRICULUM / LOCAL PERFORMANCE</small></span></div><nav><a href={appLink('dashboard')}>Command dashboard ↗</a><a href={appLink('room')}>Command room / VR ↗</a></nav></header>
     <div className="progress-content"><span className="sensor-kicker">UNIT-LEVEL TRAINING</span><h1>Build judgment through repeated situations.</h1>
       <section className="profile-bar" aria-label="Trainee profile and exercise conditions"><label>ACTIVE TRAINEE<select aria-label="Active trainee" value={profileId} onChange={event=>setProfileId(event.target.value)}>{profiles.map(profile=><option key={profile.id} value={profile.id}>{profile.name}</option>)}</select></label><form onSubmit={event=>{event.preventDefault();void createProfile();}}><input aria-label="New trainee name" value={name} onChange={event=>setName(event.target.value)} placeholder="New trainee name" maxLength={80}/><button>Create profile</button></form><label>ENVIRONMENT SETTING<select aria-label="Environment setting" value={environmentSetting} onChange={event=>setEnvironmentSetting(event.target.value as EnvironmentSetting)}><option value="rural">Rural outpost</option><option value="semi-urban">Semi-urban approach</option></select></label><label>WEATHER<select aria-label="Weather conditions" value={weather} onChange={event=>setWeather(event.target.value as NonNullable<Conditions['weather']>)}><option value="clear">Clear</option><option value="fog">Fog</option><option value="rain">Rain</option></select></label><label>VARIANT SEED<input aria-label="Curriculum seed" type="number" min="0" max="2147483647" value={seed} onChange={event=>setSeed(Number(event.target.value))}/></label><button onClick={()=>setSeed(current=>(Math.imul(current,1664525)+1013904223)>>>1)}>New variant</button></section>
       {notice&&<p className="progress-notice" role="status">{notice}</p>}

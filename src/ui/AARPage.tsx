@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getAttempt, type ExerciseArchive } from '../training/AttemptStore';
 import { appLink } from '../routing';
 import { postById } from '../dashboard/posts';
+import BrandIcon from './BrandIcon';
 import './sensor-console.css';
 
 const clock=(time:number)=>`${Math.floor(time/60).toString().padStart(2,'0')}:${Math.floor(time%60).toString().padStart(2,'0')}`;
@@ -15,7 +16,7 @@ export default function AARPage(){
   const evidence=allEvidence.filter(item=>item.deliveryTime<=time).sort((a,b)=>a.deliveryTime-b.deliveryTime);
   const actions=archive?.state.actions.filter(action=>action.time<=time)??[];
   const checkpoint=archive?.checkpoints?.filter(item=>item.time<=time).at(-1);
-  return <main className="sensor-console aar-page"><header className="sensor-topbar"><div className="sensor-brand"><span className="sensor-brand-mark">⌖</span><span><strong>PROJECT INTERCEPTOR</strong><small>LOCAL AFTER ACTION REVIEW</small></span></div><nav><a href={appLink('progress')}>Curriculum & history ↗</a><a href={appLink('trainer')}>Training console ↗</a></nav></header>
+  return <main className="sensor-console aar-page"><header className="sensor-topbar"><div className="sensor-brand"><span className="sensor-brand-mark"><BrandIcon size={26} /></span><span><strong>PROJECT INTERCEPTOR</strong><small>LOCAL AFTER ACTION REVIEW</small></span></div><nav><a href={appLink('progress')}>Curriculum & history ↗</a><a href={appLink('dashboard')}>Command dashboard ↗</a></nav></header>
     {error?<section className="aar-content"><h1>Review unavailable</h1><p role="alert">{error}</p></section>:!archive?<section className="aar-content" role="status">Loading local review…</section>:<section className="aar-content"><span className="sensor-kicker">{postById(archive.postId).name.toUpperCase()} / {archive.mode.toUpperCase()} / LEVEL {archive.level??'LEGACY'}</span><h1>{review?'After action review':'Interrupted attempt'}</h1>
       {review?<><div className="aar-summary"><strong>{archive.level===0?'FAM':Math.round(review.overall)}<small>{archive.level===0?'unscored':'/ 100'}</small></strong><p>Detection {Math.round(review.scores.detection)} · Classification {Math.round(review.scores.classification)} · Threat assessment {Math.round(review.scores.threatAssessment)} · Decision quality {Math.round(review.scores.decisionQuality)}</p></div><p>First cue to acknowledgement: {review.detectionLatencySeconds===undefined?'No acknowledgement':review.detectionLatencySeconds.toFixed(1)+' seconds'}. {review.criticalDecisionError?'Critical decision error recorded.':'No critical decision error.'}</p></>:<p>The recovered clock is held. This record is available for learning and cannot unlock a competency level.</p>}
       <p>Input history: {(archive.inputModeTransitions??[{time:0,mode:archive.inputMode??'desktop'}]).map(item=>clock(item.time)+' '+item.mode.toUpperCase()).join(' → ')}. {archive.resolvedRecipe?'Resolved scenario configuration retained.':''}</p>

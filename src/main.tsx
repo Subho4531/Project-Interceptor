@@ -6,4 +6,5 @@ import '@fontsource/ibm-plex-mono/latin-400.css';
 import Routes from './ui/Routes';
 import { SessionProvider } from './session/SessionContext';
 import './ui/styles.css';
-ReactDOM.createRoot(document.getElementById('root')!).render(<SessionProvider><Routes /></SessionProvider>);
+import { Analytics } from '@vercel/analytics/react';
+ReactDOM.createRoot(document.getElementById('root')!).render(<SessionProvider><Routes /><Analytics /></SessionProvider>);
